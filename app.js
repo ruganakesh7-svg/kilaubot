@@ -21,201 +21,6 @@ const state = {
   sending: false
 };
 
-/* =========================================================
-   KILAUBOT LOCAL QUIZ
-   ========================================================= */
-
-const QUIZ_QUESTIONS = [
-  {
-    question: "Who was Mat Kilau's father?",
-    answers: ["tok gajah", "imam perang rasu"],
-    explanation: "Tok Gajah, also known as Imam Perang Rasu, was Mat Kilau's father."
-  },
-  {
-    question: "Who was known as the Orang Kaya Semantan?",
-    answers: ["dato bahaman", "dato' bahaman", "datuk bahaman", "bahaman"],
-    explanation: "Dato' Bahaman was known as the Orang Kaya Semantan."
-  },
-  {
-    question: "In which state did Mat Kilau and the resistance movement operate?",
-    answers: ["pahang"],
-    explanation: "The resistance involving Mat Kilau took place in Pahang."
-  },
-  {
-    question: "Name one major issue that contributed to resistance against British administration in Pahang.",
-    answers: [
-      "british interference",
-      "interference",
-      "resident system",
-      "tax",
-      "taxation",
-      "loss of authority",
-      "loss of power",
-      "reduced authority",
-      "traditional authority",
-      "traditional rights"
-    ],
-    explanation:
-      "British interference, taxation, the Resident system and reduced traditional authority were important causes of resistance."
-  },
-  {
-    question: "In what year did Mat Kilau publicly reappear and claim his identity?",
-    answers: ["1969"],
-    explanation: "Mat Kilau publicly reappeared and claimed his identity in 1969."
-  }
-];
-
-function normalizeQuizText(text) {
-  return String(text || "")
-    .toLowerCase()
-    .replace(/[^a-z0-9']/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function isQuizStartCommand(text) {
-  const value = normalizeQuizText(text);
-
-  return [
-    "quiz",
-    "quiz me",
-    "start quiz",
-    "start the quiz",
-    "begin quiz",
-    "begin the quiz",
-    "give me a quiz",
-    "take a quiz",
-    "test my knowledge"
-  ].includes(value);
-}
-
-function isQuizCancelCommand(text) {
-  const value = normalizeQuizText(text);
-
-  return [
-    "cancel quiz",
-    "stop quiz",
-    "quit quiz",
-    "exit quiz",
-    "end quiz"
-  ].includes(value);
-}
-
-function quizAnswerCorrect(userAnswer, acceptedAnswers) {
-  const user = normalizeQuizText(userAnswer);
-
-  return acceptedAnswers.some((answer) => {
-    const accepted = normalizeQuizText(answer);
-
-    return user === accepted || user.includes(accepted);
-  });
-}
-
-function startLocalQuiz() {
-  const chat = getActiveChat();
-
-  chat.quizState = {
-    questionIndex: 0,
-    score: 0
-  };
-
-  saveChats();
-
-  return (
-    "Kilaubot Knowledge Quiz\n\n" +
-    "5 open-ended questions. Type your answers normally.\n\n" +
-    "Score: 0/5\n\n" +
-    "Question 1 of 5:\n" +
-    QUIZ_QUESTIONS[0].question +
-    '\n\nType "cancel quiz" at any time to stop.'
-  );
-}
-
-function handleLocalQuiz(message) {
-  const chat = getActiveChat();
-
-  if (!chat) {
-    return null;
-  }
-
-  if (isQuizStartCommand(message)) {
-    return startLocalQuiz();
-  }
-
-  if (!chat.quizState) {
-    return null;
-  }
-
-  if (isQuizCancelCommand(message)) {
-    delete chat.quizState;
-    saveChats();
-
-    return (
-      "Quiz cancelled.\n\n" +
-      "You can continue asking me questions about Mat Kilau."
-    );
-  }
-
-  const quizState = chat.quizState;
-  const current = QUIZ_QUESTIONS[quizState.questionIndex];
-
-  const correct = quizAnswerCorrect(
-    message,
-    current.answers
-  );
-
-  if (correct) {
-    quizState.score++;
-  }
-
-  const feedback = correct
-    ? "Correct! " + current.explanation
-    : "Not quite. " + current.explanation;
-
-  quizState.questionIndex++;
-
-  if (quizState.questionIndex >= QUIZ_QUESTIONS.length) {
-    const finalScore = quizState.score;
-
-    delete chat.quizState;
-    saveChats();
-
-    let result = "";
-
-    if (finalScore === 5) {
-      result = "Excellent! Perfect score.";
-    } else if (finalScore >= 3) {
-      result = "Good job! You have a solid understanding of the topic.";
-    } else {
-      result = "Keep exploring Kilaubot and try the quiz again.";
-    }
-
-    return (
-      feedback +
-      "\n\nQuiz Complete!" +
-      "\nFinal Score: " +
-      finalScore +
-      "/5" +
-      "\n\n" +
-      result +
-      '\n\nType "quiz me" to play again.'
-    );
-  }
-
-  saveChats();
-
-  return (
-    feedback +
-    "\n\nScore: " +
-    quizState.score +
-    "/5" +
-    "\n\nQuestion " +
-    (quizState.questionIndex + 1) +
-    " of 5:\n" +
-    QUIZ_QUESTIONS[quizState.questionIndex].question
-  );
-}
-
 const elements = {
   welcomeOverlay: document.getElementById("welcomeOverlay"),
   nameForm: document.getElementById("nameForm"),
@@ -254,7 +59,6 @@ function cleanName(value) {
 function createId(prefix = "id") {
   const random = Math.random().toString(36).slice(2, 10);
   const time = Date.now().toString(36);
-
   return `${prefix}-${time}-${random}`.slice(0, 36);
 }
 
@@ -274,9 +78,7 @@ function formatChatDate(timestamp) {
     date.getMonth() === now.getMonth() &&
     date.getDate() === now.getDate();
 
-  if (sameDay) {
-    return "Today";
-  }
+  if (sameDay) return "Today";
 
   return new Intl.DateTimeFormat([], {
     month: "short",
@@ -289,7 +91,6 @@ function showToast(message) {
   elements.toast.classList.add("show");
 
   clearTimeout(showToast.timeout);
-
   showToast.timeout = setTimeout(() => {
     elements.toast.classList.remove("show");
   }, 2600);
@@ -309,62 +110,42 @@ function escapeHtml(value) {
    ------------------------- */
 
 function loadStoredData() {
-  state.name = cleanName(
-    localStorage.getItem(STORAGE.name)
-  );
+  state.name = cleanName(localStorage.getItem(STORAGE.name));
 
   try {
-    const parsed = JSON.parse(
-      localStorage.getItem(STORAGE.chats) || "[]"
-    );
-
-    state.chats = Array.isArray(parsed)
-      ? parsed
-      : [];
+    const parsed = JSON.parse(localStorage.getItem(STORAGE.chats) || "[]");
+    state.chats = Array.isArray(parsed) ? parsed : [];
   } catch {
     state.chats = [];
   }
 
-  state.activeChatId =
-    localStorage.getItem(STORAGE.activeChatId);
+  state.activeChatId = localStorage.getItem(STORAGE.activeChatId);
 
   if (
     !state.activeChatId ||
-    !state.chats.some(
-      (chat) => chat.id === state.activeChatId
-    )
+    !state.chats.some((chat) => chat.id === state.activeChatId)
   ) {
-    state.activeChatId =
-      state.chats[0]?.id || null;
+    state.activeChatId = state.chats[0]?.id || null;
   }
 }
 
 function saveChats() {
   state.chats.sort((a, b) => {
-    const aPinned = Boolean(a.pinned);
-    const bPinned = Boolean(b.pinned);
+    const pinnedDifference = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
 
-    if (aPinned !== bPinned) {
-      return bPinned - aPinned;
+    if (pinnedDifference !== 0) {
+      return pinnedDifference;
     }
 
     return b.updatedAt - a.updatedAt;
   });
 
-  localStorage.setItem(
-    STORAGE.chats,
-    JSON.stringify(state.chats)
-  );
+  localStorage.setItem(STORAGE.chats, JSON.stringify(state.chats));
 
   if (state.activeChatId) {
-    localStorage.setItem(
-      STORAGE.activeChatId,
-      state.activeChatId
-    );
+    localStorage.setItem(STORAGE.activeChatId, state.activeChatId);
   } else {
-    localStorage.removeItem(
-      STORAGE.activeChatId
-    );
+    localStorage.removeItem(STORAGE.activeChatId);
   }
 }
 
@@ -374,51 +155,26 @@ function saveChats() {
 
 function applyUserName(name) {
   const clean = cleanName(name);
-
-  if (!clean) {
-    return;
-  }
+  if (!clean) return;
 
   state.name = clean;
+  localStorage.setItem(STORAGE.name, clean);
 
-  localStorage.setItem(
-    STORAGE.name,
-    clean
-  );
+  elements.profileName.textContent = clean;
+  elements.profileAvatar.textContent = clean.charAt(0).toUpperCase();
 
-  elements.profileName.textContent =
-    clean;
-
-  elements.profileAvatar.textContent =
-    clean.charAt(0).toUpperCase();
-
-  elements.welcomeOverlay.classList.remove(
-    "show"
-  );
-
-  elements.welcomeOverlay.setAttribute(
-    "aria-hidden",
-    "true"
-  );
+  elements.welcomeOverlay.classList.remove("show");
+  elements.welcomeOverlay.setAttribute("aria-hidden", "true");
 
   renderMessages();
 }
 
 function openNamePopup() {
   elements.nameInput.value = state.name;
+  elements.welcomeOverlay.classList.add("show");
+  elements.welcomeOverlay.setAttribute("aria-hidden", "false");
 
-  elements.welcomeOverlay.classList.add(
-    "show"
-  );
-
-  elements.welcomeOverlay.setAttribute(
-    "aria-hidden",
-    "false"
-  );
-
-  setTimeout(() => {
-    elements.nameInput.focus();
-  }, 80);
+  setTimeout(() => elements.nameInput.focus(), 80);
 }
 
 /* -------------------------
@@ -439,11 +195,9 @@ function createChat() {
   };
 
   state.chats.unshift(chat);
-
   state.activeChatId = chat.id;
 
   saveChats();
-
   renderHistory();
   renderMessages();
 
@@ -453,83 +207,47 @@ function createChat() {
 }
 
 function getActiveChat() {
-  return (
-    state.chats.find(
-      (chat) =>
-        chat.id === state.activeChatId
-    ) || null
-  );
+  return state.chats.find((chat) => chat.id === state.activeChatId) || null;
 }
 
 function switchChat(chatId) {
-  if (
-    !state.chats.some(
-      (chat) => chat.id === chatId
-    )
-  ) {
-    return;
-  }
+  if (!state.chats.some((chat) => chat.id === chatId)) return;
 
   state.activeChatId = chatId;
-
   saveChats();
 
   renderHistory();
   renderMessages();
 
-  elements.appSidebar.classList.remove(
-    "open"
-  );
+  elements.appSidebar.classList.remove("open");
 }
-
-/* -------------------------
-   Pin chat
-   ------------------------- */
+function closeHistoryMenus() {
+  document
+    .querySelectorAll(".history-options-menu.show")
+    .forEach((menu) => menu.classList.remove("show"));
+}
 
 function togglePinChat(chatId) {
-  const chat = state.chats.find(
-    (chat) => chat.id === chatId
-  );
+  const chat = state.chats.find((chat) => chat.id === chatId);
 
-  if (!chat) {
-    return;
-  }
+  if (!chat) return;
 
-  chat.pinned =
-    !Boolean(chat.pinned);
+  chat.pinned = !Boolean(chat.pinned);
 
   saveChats();
-
   renderHistory();
 
-  showToast(
-    chat.pinned
-      ? "Chat pinned"
-      : "Chat unpinned"
-  );
+  showToast(chat.pinned ? "Chat pinned" : "Chat unpinned");
 }
 
-/* -------------------------
-   Rename chat
-   ------------------------- */
-
 function renameChat(chatId) {
-  const chat = state.chats.find(
-    (chat) => chat.id === chatId
-  );
+  const chat = state.chats.find((chat) => chat.id === chatId);
 
-  if (!chat) {
-    return;
-  }
+  if (!chat) return;
 
-  const newTitle = window.prompt(
-    "Rename this chat:",
-    chat.title
-  );
+  const newTitle = window.prompt("Rename this chat:", chat.title);
 
-  if (newTitle === null) {
-    return;
-  }
+  if (newTitle === null) return;
 
   const cleanTitle = String(newTitle)
     .trim()
@@ -537,59 +255,45 @@ function renameChat(chatId) {
     .slice(0, 40);
 
   if (!cleanTitle) {
+    showToast("Chat name cannot be empty");
     return;
   }
 
   chat.title = cleanTitle;
 
-  chat.updatedAt = Date.now();
-
   saveChats();
-
   renderHistory();
 
   showToast("Chat renamed");
 }
 
-/* -------------------------
-   Delete individual chat
-   ------------------------- */
-
 function deleteChat(chatId) {
-  const chat = state.chats.find(
-    (chat) => chat.id === chatId
-  );
+  const chat = state.chats.find((chat) => chat.id === chatId);
 
-  if (!chat) {
-    return;
-  }
+  if (!chat) return;
 
-  const okay = window.confirm(
-    `Delete "${chat.title}"?`
-  );
+  const okay = window.confirm(`Delete "${chat.title}"?`);
 
-  if (!okay) {
-    return;
-  }
+  if (!okay) return;
 
-  const deletingActiveChat =
-    state.activeChatId === chatId;
+  const deletingActiveChat = state.activeChatId === chatId;
 
-  state.chats =
-    state.chats.filter(
-      (chat) => chat.id !== chatId
-    );
+  state.chats = state.chats.filter((chat) => chat.id !== chatId);
 
   if (deletingActiveChat) {
-    state.activeChatId =
-      state.chats[0]?.id || null;
+    state.activeChatId = null;
   }
 
   saveChats();
 
-  if (!state.activeChatId) {
+  if (!state.chats.length) {
     createChat();
   } else {
+    if (!state.activeChatId) {
+      state.activeChatId = state.chats[0].id;
+      saveChats();
+    }
+
     renderHistory();
     renderMessages();
   }
@@ -598,13 +302,8 @@ function deleteChat(chatId) {
 }
 
 function titleFromMessage(message) {
-  const clean = message
-    .trim()
-    .replace(/\s+/g, " ");
-
-  return clean.length > 32
-    ? `${clean.slice(0, 32)}…`
-    : clean;
+  const clean = message.trim().replace(/\s+/g, " ");
+  return clean.length > 32 ? `${clean.slice(0, 32)}…` : clean;
 }
 
 function addMessage(role, text) {
@@ -625,20 +324,14 @@ function addMessage(role, text) {
 
   if (
     role === "user" &&
-    (
-      chat.title ===
-        "New conversation" ||
-      chat.messages.length <= 2
-    )
+    (chat.title === "New conversation" || chat.messages.length <= 2)
   ) {
-    chat.title =
-      titleFromMessage(text);
+    chat.title = titleFromMessage(text);
   }
 
   chat.updatedAt = now;
 
   saveChats();
-
   renderHistory();
   renderMessages();
 
@@ -648,7 +341,6 @@ function addMessage(role, text) {
 /* -------------------------
    Render history
    ------------------------- */
-
 function renderHistory() {
   if (!state.chats.length) {
     elements.chatHistoryList.innerHTML = `
@@ -656,197 +348,138 @@ function renderHistory() {
         Your conversations will appear here after you start chatting.
       </div>
     `;
-
     return;
   }
 
-  elements.chatHistoryList.innerHTML =
-    state.chats
-      .map((chat) => {
-        const isActive =
-          chat.id ===
-          state.activeChatId
-            ? "active"
-            : "";
+  elements.chatHistoryList.innerHTML = state.chats
+    .map((chat) => {
+      const isActive = chat.id === state.activeChatId ? "active" : "";
+      const pinLabel = chat.pinned ? "Unpin" : "Pin";
+      const historyIcon = chat.pinned ? "📌" : "◌";
 
-        return `
-          <div class="history-item-wrapper">
+      return `
+        <div class="history-item-wrapper">
+          <button
+            class="history-item ${isActive}"
+            type="button"
+            data-chat-id="${escapeHtml(chat.id)}"
+            title="${escapeHtml(chat.title)}"
+          >
+            <span class="history-item-icon">${historyIcon}</span>
 
+            <span class="history-item-copy">
+              <strong>${escapeHtml(chat.title)}</strong>
+              <small>${escapeHtml(formatChatDate(chat.updatedAt))}</small>
+            </span>
+          </button>
+
+          <button
+            class="history-options-button"
+            type="button"
+            data-menu-button="${escapeHtml(chat.id)}"
+            aria-label="Options for ${escapeHtml(chat.title)}"
+            title="Chat options"
+          >
+            •••
+          </button>
+
+          <div
+            class="history-options-menu"
+            data-menu="${escapeHtml(chat.id)}"
+            role="menu"
+          >
             <button
-              class="history-item ${isActive}"
               type="button"
-              data-chat-id="${escapeHtml(chat.id)}"
-              title="${escapeHtml(chat.title)}"
+              data-action="pin"
+              data-action-chat-id="${escapeHtml(chat.id)}"
+              role="menuitem"
             >
-
-              <span class="history-item-icon">
-                ${chat.pinned ? "◆" : "◌"}
-              </span>
-
-              <span class="history-item-copy">
-                <strong>
-                  ${escapeHtml(chat.title)}
-                </strong>
-
-                <small>
-                  ${escapeHtml(
-                    formatChatDate(
-                      chat.updatedAt
-                    )
-                  )}
-                </small>
-              </span>
-
+              ${pinLabel}
             </button>
 
             <button
-              class="history-options-button"
               type="button"
-              data-menu-button="${escapeHtml(chat.id)}"
-              aria-label="Chat options"
-              title="Chat options"
+              data-action="rename"
+              data-action-chat-id="${escapeHtml(chat.id)}"
+              role="menuitem"
             >
-              •••
+              Rename
             </button>
 
-            <div
-              class="history-options-menu"
-              data-menu="${escapeHtml(chat.id)}"
+            <button
+              type="button"
+              class="danger"
+              data-action="delete"
+              data-action-chat-id="${escapeHtml(chat.id)}"
+              role="menuitem"
             >
-
-              <button
-                type="button"
-                data-action="pin"
-                data-action-chat-id="${escapeHtml(chat.id)}"
-              >
-                ${
-                  chat.pinned
-                    ? "Unpin"
-                    : "Pin"
-                }
-              </button>
-
-              <button
-                type="button"
-                data-action="rename"
-                data-action-chat-id="${escapeHtml(chat.id)}"
-              >
-                Rename
-              </button>
-
-              <button
-                type="button"
-                class="danger"
-                data-action="delete"
-                data-action-chat-id="${escapeHtml(chat.id)}"
-              >
-                Delete
-              </button>
-
-            </div>
-
+              Delete
+            </button>
           </div>
-        `;
-      })
-      .join("");
-
-  /* Open previous chat */
+        </div>
+      `;
+    })
+    .join("");
 
   elements.chatHistoryList
-    .querySelectorAll(
-      "[data-chat-id]"
-    )
+    .querySelectorAll("[data-chat-id]")
     .forEach((button) => {
-      button.addEventListener(
-        "click",
-        () => {
-          switchChat(
-            button.dataset.chatId
-          );
-        }
-      );
+      button.addEventListener("click", () => {
+        closeHistoryMenus();
+        switchChat(button.dataset.chatId);
+      });
     });
 
-  /* Open / close the 3-dot menu */
-
   elements.chatHistoryList
-    .querySelectorAll(
-      "[data-menu-button]"
-    )
+    .querySelectorAll("[data-menu-button]")
     .forEach((button) => {
-      button.addEventListener(
-        "click",
-        (event) => {
-          event.preventDefault();
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
 
-          event.stopPropagation();
+        const chatId = button.dataset.menuButton;
+        const menu = elements.chatHistoryList.querySelector(
+          `[data-menu="${chatId}"]`
+        );
 
-          const chatId =
-            button.dataset.menuButton;
+        if (!menu) return;
 
-          const menu =
-            elements.chatHistoryList
-              .querySelector(
-                `[data-menu="${chatId}"]`
-              );
+        const wasOpen = menu.classList.contains("show");
 
-          elements.chatHistoryList
-            .querySelectorAll(
-              ".history-options-menu.show"
-            )
-            .forEach(
-              (openMenu) => {
-                if (
-                  openMenu !== menu
-                ) {
-                  openMenu.classList.remove(
-                    "show"
-                  );
-                }
-              }
-            );
+        closeHistoryMenus();
 
-          menu?.classList.toggle(
-            "show"
-          );
+        if (!wasOpen) {
+          menu.classList.add("show");
         }
-      );
+      });
     });
 
-  /* Pin / Rename / Delete */
-
   elements.chatHistoryList
-    .querySelectorAll(
-      "[data-action]"
-    )
+    .querySelectorAll("[data-action]")
     .forEach((button) => {
-      button.addEventListener(
-        "click",
-        (event) => {
-          event.preventDefault();
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
 
-          event.stopPropagation();
+        const action = button.dataset.action;
+        const chatId = button.dataset.actionChatId;
 
-          const action =
-            button.dataset.action;
+        closeHistoryMenus();
 
-          const chatId =
-            button.dataset
-              .actionChatId;
-
-          if (action === "pin") {
-            togglePinChat(chatId);
-          } else if (
-            action === "rename"
-          ) {
-            renameChat(chatId);
-          } else if (
-            action === "delete"
-          ) {
-            deleteChat(chatId);
-          }
+        if (action === "pin") {
+          togglePinChat(chatId);
+          return;
         }
-      );
+
+        if (action === "rename") {
+          renameChat(chatId);
+          return;
+        }
+
+        if (action === "delete") {
+          deleteChat(chatId);
+        }
+      });
     });
 }
 
@@ -857,86 +490,54 @@ function renderHistory() {
 function renderMessages() {
   const chat = getActiveChat();
 
-  const firstName =
-    state.name || "there";
+  const firstName = state.name || "there";
 
   let html = `
-    <section class="welcome-message">
-
-      <img
-        src="./assets/kilaubot-avatar.png"
-        alt="Kilaubot avatar"
-        class="bot-avatar"
-      />
-
-      <h3>
-        Hi ${escapeHtml(firstName)} — I’m Kilaubot.
-      </h3>
-
-      <p>
-        Read the story beside me or ask a question directly.
-        You can follow up naturally with questions like
-        “why did that matter?” or “what happened after that?”
-      </p>
-
-    </section>
+ <section class="welcome-message">
+  <img
+    src="./assets/kilaubot-avatar.png"
+    alt="Kilaubot avatar"
+    class="bot-avatar"
+  />
+  <h3>Hi ${escapeHtml(firstName)} — I’m Kilaubot.</h3>
+  <p>
+    Read the story beside me or ask a question directly.
+    You can follow up naturally with questions like “why did that matter?”
+    or “what happened after that?”
+  </p>
+</section>
   `;
 
   if (chat?.messages?.length) {
     html += chat.messages
       .map((message) => {
-        const isUser =
-          message.role === "user";
+        const isUser = message.role === "user";
 
         return `
-          <div
-            class="message-row ${
-              isUser
-                ? "user"
-                : "bot"
-            }"
-          >
-
+          <div class="message-row ${isUser ? "user" : "bot"}">
             ${
               isUser
                 ? ""
-                : `
-                  <img
-                    src="./assets/kilaubot-avatar.png"
-                    alt="Kilaubot avatar"
-                    class="message-avatar"
-                  />
-                `
+                : `<img
+     src="./assets/kilaubot-avatar.png"
+     alt="Kilaubot avatar"
+     class="message-avatar"
+   />`
             }
-
             <div class="message-content">
-
-              <div class="message-bubble">
-                ${escapeHtml(message.text)}
-              </div>
-
-              <div class="message-meta">
-                ${escapeHtml(
-                  formatTime(
-                    message.createdAt
-                  )
-                )}
-              </div>
-
+              <div class="message-bubble">${escapeHtml(message.text)}</div>
+              <div class="message-meta">${escapeHtml(formatTime(message.createdAt))}</div>
             </div>
-
           </div>
         `;
       })
       .join("");
   }
 
-  elements.messages.innerHTML =
-    html;
+  elements.messages.innerHTML = html;
 
   requestAnimationFrame(() => {
-    elements.messages.scrollTop =
-      elements.messages.scrollHeight;
+    elements.messages.scrollTop = elements.messages.scrollHeight;
   });
 }
 
@@ -944,193 +545,58 @@ function renderMessages() {
    API
    ------------------------- */
 
-async function sendToKilaubot(
-  message
-) {
+async function sendToKilaubot(message) {
   let chat = getActiveChat();
 
   if (!chat) {
     chat = createChat();
   }
 
-  const response = await fetch(
-    "/api/chat",
-    {
-      method: "POST",
+  const response = await fetch("/api/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      message,
+      sessionId: chat.sessionId
+    })
+  });
 
-      headers: {
-        "Content-Type":
-          "application/json"
-      },
-
-      body: JSON.stringify({
-        message,
-        sessionId: chat.sessionId
-      })
-    }
-  );
-
-  const data = await response
-    .json()
-    .catch(() => ({}));
+  const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
     throw new Error(
       data.error ||
-        "Kilaubot could not connect. Check the website backend configuration."
+      "Kilaubot could not connect. Check the website backend configuration."
     );
   }
 
   return data;
 }
 
-async function sendMessage(
-  rawMessage
-) {
-  const message = String(
-    rawMessage || ""
-  ).trim();
+async function sendMessage(rawMessage) {
+  const message = String(rawMessage || "").trim();
 
-  if (
-    !message ||
-    state.sending
-  ) {
-    return;
-  }
+  if (!message || state.sending) return;
 
   state.sending = true;
 
-  elements.messageInput.value =
-    "";
-
+  elements.messageInput.value = "";
   resizeComposer();
 
-  addMessage(
-    "user",
-    message
-  );
+  addMessage("user", message);
 
-  elements.sendButton.disabled =
-    true;
-
-  elements.typingIndicator
-    .classList.remove("hidden");
-
-  elements.suggestionRow
-    .classList.add("hidden");
+  elements.sendButton.disabled = true;
+  elements.typingIndicator.classList.remove("hidden");
+  elements.suggestionRow.classList.add("hidden");
 
   try {
-
-    /*
-      QUIZ FIRST
-
-      If the user types:
-      quiz me
-      give me a quiz
-      start quiz
-
-      OR if a quiz is already running,
-      it is handled locally.
-
-      Dialogflow is completely bypassed
-      for the quiz.
-    */
-
-    const quizReply =
-      handleLocalQuiz(
-        message
-      );
-
-    if (quizReply !== null) {
-
-      addMessage(
-        "bot",
-        quizReply
-      );
-
-      return;
-    }
-
-
-    /*
-      NORMAL KILAUBOT QUESTIONS
-
-      Anything that is NOT part of the quiz
-      continues using the existing backend.
-    */
-
-    const data =
-      await sendToKilaubot(
-        message
-      );
+    const data = await sendToKilaubot(message);
 
     addMessage(
       "bot",
-      data.reply ||
-        "I understood your question, but no response text was returned."
-    );
-
-  }
-
-  catch (error) {
-
-    console.error(error);
-
-    addMessage(
-      "bot",
-      `I couldn't connect to the Kilaubot backend yet. ${error.message}`
-    );
-
-  }
-
-  finally {
-
-    state.sending = false;
-
-    elements.sendButton.disabled =
-      false;
-
-    elements.typingIndicator
-      .classList.add("hidden");
-
-    elements.suggestionRow
-      .classList.remove("hidden");
-
-    elements.messageInput.focus();
-
-  }
-}
-  state.sending = true;
-
-  elements.messageInput.value =
-    "";
-
-  resizeComposer();
-
-  addMessage(
-    "user",
-    message
-  );
-
-  elements.sendButton.disabled =
-    true;
-
-  elements.typingIndicator
-    .classList.remove("hidden");
-
-  elements.suggestionRow
-    .classList.add("hidden");
-
-  try {
-    const data =
-      await sendToKilaubot(
-        message
-      );
-
-    addMessage(
-      "bot",
-      data.reply ||
-        "I could not produce a response for that question."
+      data.reply || "I could not produce a response for that question."
     );
   } catch (error) {
     console.error(error);
@@ -1141,16 +607,9 @@ async function sendMessage(
     );
   } finally {
     state.sending = false;
-
-    elements.sendButton.disabled =
-      false;
-
-    elements.typingIndicator
-      .classList.add("hidden");
-
-    elements.suggestionRow
-      .classList.remove("hidden");
-
+    elements.sendButton.disabled = false;
+    elements.typingIndicator.classList.add("hidden");
+    elements.suggestionRow.classList.remove("hidden");
     elements.messageInput.focus();
   }
 }
@@ -1160,48 +619,29 @@ async function sendMessage(
    ------------------------- */
 
 function resizeComposer() {
-  const field =
-    elements.messageInput;
+  const field = elements.messageInput;
 
   field.style.height = "auto";
-
-  field.style.height =
-    `${Math.min(
-      field.scrollHeight,
-      130
-    )}px`;
+  field.style.height = `${Math.min(field.scrollHeight, 130)}px`;
 }
 
-function prefillQuestion(
-  question
-) {
-  elements.messageInput.value =
-    question;
-
+function prefillQuestion(question) {
+  elements.messageInput.value = question;
   resizeComposer();
 
-  if (
-    window.innerWidth <= 970
-  ) {
-    document
-      .getElementById("chatPane")
-      .scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-      });
+  if (window.innerWidth <= 970) {
+    document.getElementById("chatPane").scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
   }
 
   setTimeout(() => {
     elements.messageInput.focus();
-
-    elements.messageInput
-      .setSelectionRange(
-        elements.messageInput
-          .value.length,
-
-        elements.messageInput
-          .value.length
-      );
+    elements.messageInput.setSelectionRange(
+      elements.messageInput.value.length,
+      elements.messageInput.value.length
+    );
   }, 280);
 }
 
@@ -1221,65 +661,30 @@ function setupStoryObserver() {
     "sources"
   ];
 
-  const links = [
-    ...document.querySelectorAll(
-      ".story-nav-link"
-    )
-  ];
+  const links = [...document.querySelectorAll(".story-nav-link")];
 
-  const observer =
-    new IntersectionObserver(
-      (entries) => {
-        const visible =
-          entries
-            .filter(
-              (entry) =>
-                entry.isIntersecting
-            )
-            .sort(
-              (a, b) =>
-                b.intersectionRatio -
-                a.intersectionRatio
-            )[0];
+  const observer = new IntersectionObserver(
+    (entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
 
-        if (!visible) {
-          return;
-        }
+      if (!visible) return;
 
-        links.forEach((link) => {
-          const target =
-            link
-              .getAttribute("href")
-              ?.slice(1);
-
-          link.classList.toggle(
-            "active",
-            target ===
-              visible.target.id
-          );
-        });
-      },
-      {
-        root:
-          document.getElementById(
-            "storyPane"
-          ),
-
-        threshold: [
-          0.2,
-          0.45,
-          0.7
-        ]
-      }
-    );
+      links.forEach((link) => {
+        const target = link.getAttribute("href")?.slice(1);
+        link.classList.toggle("active", target === visible.target.id);
+      });
+    },
+    {
+      root: document.getElementById("storyPane"),
+      threshold: [0.2, 0.45, 0.7]
+    }
+  );
 
   sections.forEach((id) => {
-    const element =
-      document.getElementById(id);
-
-    if (element) {
-      observer.observe(element);
-    }
+    const element = document.getElementById(id);
+    if (element) observer.observe(element);
   });
 }
 
@@ -1287,194 +692,76 @@ function setupStoryObserver() {
    Events
    ------------------------- */
 
-elements.nameForm
-  .addEventListener(
-    "submit",
-    (event) => {
-      event.preventDefault();
+elements.nameForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  applyUserName(elements.nameInput.value);
+});
 
-      applyUserName(
-        elements.nameInput.value
-      );
-    }
+elements.changeNameButton.addEventListener("click", openNamePopup);
+
+elements.newChatButton.addEventListener("click", () => {
+  createChat();
+  showToast("New chat started");
+  elements.appSidebar.classList.remove("open");
+});
+
+elements.clearHistoryButton.addEventListener("click", () => {
+  const okay = window.confirm(
+    "Clear all locally saved Kilaubot chat history from this browser?"
   );
 
-elements.changeNameButton
-  .addEventListener(
-    "click",
-    openNamePopup
-  );
+  if (!okay) return;
 
-elements.newChatButton
-  .addEventListener(
-    "click",
-    () => {
-      createChat();
+  state.chats = [];
+  state.activeChatId = null;
 
-      showToast(
-        "New chat started"
-      );
+  saveChats();
+  createChat();
 
-      elements.appSidebar
-        .classList.remove("open");
-    }
-  );
+  showToast("Chat history cleared");
+});
 
-elements.clearHistoryButton
-  .addEventListener(
-    "click",
-    () => {
-      const okay =
-        window.confirm(
-          "Clear all locally saved Kilaubot chat history from this browser?"
-        );
+elements.chatForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  sendMessage(elements.messageInput.value);
+});
 
-      if (!okay) {
-        return;
-      }
+elements.messageInput.addEventListener("input", resizeComposer);
 
-      state.chats = [];
-
-      state.activeChatId =
-        null;
-
-      saveChats();
-
-      createChat();
-
-      showToast(
-        "Chat history cleared"
-      );
-    }
-  );
-
-elements.chatForm
-  .addEventListener(
-    "submit",
-    (event) => {
-      event.preventDefault();
-
-      sendMessage(
-        elements.messageInput
-          .value
-      );
-    }
-  );
-
-elements.messageInput
-  .addEventListener(
-    "input",
-    resizeComposer
-  );
-
-elements.messageInput
-  .addEventListener(
-    "keydown",
-    (event) => {
-      if (
-        event.key === "Enter" &&
-        !event.shiftKey
-      ) {
-        event.preventDefault();
-
-        sendMessage(
-          elements.messageInput
-            .value
-        );
-      }
-    }
-  );
-
-document
-  .querySelectorAll(
-    "[data-question]"
-  )
-  .forEach((button) => {
-    button.addEventListener(
-      "click",
-      () => {
-        prefillQuestion(
-          button.dataset.question
-        );
-      }
-    );
-  });
-
-elements.mobileMenuButton
-  .addEventListener(
-    "click",
-    () => {
-      elements.appSidebar
-        .classList.toggle("open");
-    }
-  );
-
-document
-  .querySelectorAll(
-    ".story-nav-link"
-  )
-  .forEach((link) => {
-    link.addEventListener(
-      "click",
-      () => {
-        elements.appSidebar
-          .classList.remove(
-            "open"
-          );
-      }
-    );
-  });
-
-/* Close menus when clicking outside */
-
-document.addEventListener(
-  "click",
-  (event) => {
-    if (
-      event.target.closest(
-        ".history-options-menu"
-      ) ||
-      event.target.closest(
-        ".history-options-button"
-      )
-    ) {
-      return;
-    }
-
-    document
-      .querySelectorAll(
-        ".history-options-menu.show"
-      )
-      .forEach((menu) => {
-        menu.classList.remove(
-          "show"
-        );
-      });
+elements.messageInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    sendMessage(elements.messageInput.value);
   }
-);
+});
 
-/* Close menus using Escape */
+document.querySelectorAll("[data-question]").forEach((button) => {
+  button.addEventListener("click", () => {
+    prefillQuestion(button.dataset.question);
+  });
+});
 
-document.addEventListener(
-  "keydown",
-  (event) => {
-    if (
-      event.key !== "Escape"
-    ) {
-      return;
-    }
+elements.mobileMenuButton.addEventListener("click", () => {
+  elements.appSidebar.classList.toggle("open");
+});
 
-    document
-      .querySelectorAll(
-        ".history-options-menu.show"
-      )
-      .forEach((menu) => {
-        menu.classList.remove(
-          "show"
-        );
-      });
+document.querySelectorAll(".story-nav-link").forEach((link) => {
+  link.addEventListener("click", () => {
+    elements.appSidebar.classList.remove("open");
+  });
+});
+
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".history-item-wrapper")) {
+    closeHistoryMenus();
   }
-);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeHistoryMenus();
+  }
+});
 
 /* -------------------------
    Boot
@@ -1491,15 +778,12 @@ function boot() {
   }
 
   if (state.name) {
-    applyUserName(
-      state.name
-    );
+    applyUserName(state.name);
   } else {
     openNamePopup();
   }
 
   setupStoryObserver();
-
   resizeComposer();
 }
 
