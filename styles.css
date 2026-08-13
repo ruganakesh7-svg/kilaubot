@@ -3099,3 +3099,147 @@ textarea::placeholder {
   object-fit: cover;
   object-position: center;
 }
+/* =========================================================
+   FINAL CHAT BUBBLE FIX
+   Keep this at the VERY BOTTOM of styles.css
+   ========================================================= */
+
+.message-row {
+  display: flex !important;
+  align-items: flex-start !important;
+  width: 100% !important;
+  margin: 0 0 12px !important;
+  gap: 9px !important;
+}
+
+/* -------------------------
+   BOT
+   ------------------------- */
+
+.message-row.bot {
+  justify-content: flex-start !important;
+}
+
+.message-row.bot .message-content {
+  width: fit-content !important;
+  min-width: 0 !important;
+  max-width: 82% !important;
+  margin: 0 !important;
+}
+
+.message-row.bot .message-bubble {
+  display: block !important;
+
+  width: fit-content !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+
+  height: auto !important;
+  min-height: 0 !important;
+
+  margin: 0 !important;
+  padding: 9px 12px !important;
+
+  border-radius: 12px !important;
+  border-bottom-left-radius: 4px !important;
+
+  background: #f4f2ed !important;
+  color: #344039 !important;
+
+  font-size: 11.5px !important;
+  line-height: 1.55 !important;
+
+  text-align: left !important;
+
+  white-space: pre-wrap !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+
+  align-items: initial !important;
+  justify-content: initial !important;
+}
+
+
+/* -------------------------
+   USER
+   ------------------------- */
+
+.message-row.user {
+  justify-content: flex-end !important;
+}
+
+.message-row.user .message-content {
+  width: fit-content !important;
+  min-width: 0 !important;
+  max-width: 72% !important;
+
+  margin: 0 0 0 auto !important;
+}
+
+.message-row.user .message-bubble {
+  display: block !important;
+
+  width: fit-content !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+
+  height: auto !important;
+  min-height: 0 !important;
+
+  margin: 0 !important;
+  padding: 9px 13px !important;
+
+  border-radius: 12px !important;
+  border-bottom-right-radius: 4px !important;
+
+  background: #173f2e !important;
+  color: #ffffff !important;
+
+  font-size: 11.5px !important;
+  line-height: 1.5 !important;
+
+  text-align: left !important;
+
+  white-space: pre-wrap !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+
+  align-items: initial !important;
+  justify-content: initial !important;
+}
+
+
+/* -------------------------
+   TIMESTAMPS
+   ------------------------- */
+
+.message-meta {
+  margin-top: 3px !important;
+
+  color: #9ba39e !important;
+
+  font-size: 8px !important;
+  line-height: 1 !important;
+}
+
+.message-row.user .message-meta {
+  text-align: right !important;
+}
+
+
+/* -------------------------
+   BOT AVATAR
+   ------------------------- */
+
+.message-avatar {
+  width: 31px !important;
+  height: 31px !important;
+
+  flex: 0 0 31px !important;
+
+  margin: 1px 0 0 !important;
+
+  border-radius: 50% !important;
+
+  object-fit: cover !important;
+}
