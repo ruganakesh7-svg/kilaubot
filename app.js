@@ -21,6 +21,201 @@ const state = {
   sending: false
 };
 
+/* =========================================================
+   KILAUBOT LOCAL QUIZ
+   ========================================================= */
+
+const QUIZ_QUESTIONS = [
+  {
+    question: "Who was Mat Kilau's father?",
+    answers: ["tok gajah", "imam perang rasu"],
+    explanation: "Tok Gajah, also known as Imam Perang Rasu, was Mat Kilau's father."
+  },
+  {
+    question: "Who was known as the Orang Kaya Semantan?",
+    answers: ["dato bahaman", "dato' bahaman", "datuk bahaman", "bahaman"],
+    explanation: "Dato' Bahaman was known as the Orang Kaya Semantan."
+  },
+  {
+    question: "In which state did Mat Kilau and the resistance movement operate?",
+    answers: ["pahang"],
+    explanation: "The resistance involving Mat Kilau took place in Pahang."
+  },
+  {
+    question: "Name one major issue that contributed to resistance against British administration in Pahang.",
+    answers: [
+      "british interference",
+      "interference",
+      "resident system",
+      "tax",
+      "taxation",
+      "loss of authority",
+      "loss of power",
+      "reduced authority",
+      "traditional authority",
+      "traditional rights"
+    ],
+    explanation:
+      "British interference, taxation, the Resident system and reduced traditional authority were important causes of resistance."
+  },
+  {
+    question: "In what year did Mat Kilau publicly reappear and claim his identity?",
+    answers: ["1969"],
+    explanation: "Mat Kilau publicly reappeared and claimed his identity in 1969."
+  }
+];
+
+function normalizeQuizText(text) {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9']/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isQuizStartCommand(text) {
+  const value = normalizeQuizText(text);
+
+  return [
+    "quiz",
+    "quiz me",
+    "start quiz",
+    "start the quiz",
+    "begin quiz",
+    "begin the quiz",
+    "give me a quiz",
+    "take a quiz",
+    "test my knowledge"
+  ].includes(value);
+}
+
+function isQuizCancelCommand(text) {
+  const value = normalizeQuizText(text);
+
+  return [
+    "cancel quiz",
+    "stop quiz",
+    "quit quiz",
+    "exit quiz",
+    "end quiz"
+  ].includes(value);
+}
+
+function quizAnswerCorrect(userAnswer, acceptedAnswers) {
+  const user = normalizeQuizText(userAnswer);
+
+  return acceptedAnswers.some((answer) => {
+    const accepted = normalizeQuizText(answer);
+
+    return user === accepted || user.includes(accepted);
+  });
+}
+
+function startLocalQuiz() {
+  const chat = getActiveChat();
+
+  chat.quizState = {
+    questionIndex: 0,
+    score: 0
+  };
+
+  saveChats();
+
+  return (
+    "Kilaubot Knowledge Quiz\n\n" +
+    "5 open-ended questions. Type your answers normally.\n\n" +
+    "Score: 0/5\n\n" +
+    "Question 1 of 5:\n" +
+    QUIZ_QUESTIONS[0].question +
+    '\n\nType "cancel quiz" at any time to stop.'
+  );
+}
+
+function handleLocalQuiz(message) {
+  const chat = getActiveChat();
+
+  if (!chat) {
+    return null;
+  }
+
+  if (isQuizStartCommand(message)) {
+    return startLocalQuiz();
+  }
+
+  if (!chat.quizState) {
+    return null;
+  }
+
+  if (isQuizCancelCommand(message)) {
+    delete chat.quizState;
+    saveChats();
+
+    return (
+      "Quiz cancelled.\n\n" +
+      "You can continue asking me questions about Mat Kilau."
+    );
+  }
+
+  const quizState = chat.quizState;
+  const current = QUIZ_QUESTIONS[quizState.questionIndex];
+
+  const correct = quizAnswerCorrect(
+    message,
+    current.answers
+  );
+
+  if (correct) {
+    quizState.score++;
+  }
+
+  const feedback = correct
+    ? "Correct! " + current.explanation
+    : "Not quite. " + current.explanation;
+
+  quizState.questionIndex++;
+
+  if (quizState.questionIndex >= QUIZ_QUESTIONS.length) {
+    const finalScore = quizState.score;
+
+    delete chat.quizState;
+    saveChats();
+
+    let result = "";
+
+    if (finalScore === 5) {
+      result = "Excellent! Perfect score.";
+    } else if (finalScore >= 3) {
+      result = "Good job! You have a solid understanding of the topic.";
+    } else {
+      result = "Keep exploring Kilaubot and try the quiz again.";
+    }
+
+    return (
+      feedback +
+      "\n\nQuiz Complete!" +
+      "\nFinal Score: " +
+      finalScore +
+      "/5" +
+      "\n\n" +
+      result +
+      '\n\nType "quiz me" to play again.'
+    );
+  }
+
+  saveChats();
+
+  return (
+    feedback +
+    "\n\nScore: " +
+    quizState.score +
+    "/5" +
+    "\n\nQuestion " +
+    (quizState.questionIndex + 1) +
+    " of 5:\n" +
+    QUIZ_QUESTIONS[quizState.questionIndex].question
+  );
+}
+
 const elements = {
   welcomeOverlay: document.getElementById("welcomeOverlay"),
   nameForm: document.getElementById("nameForm"),
@@ -59,6 +254,7 @@ function cleanName(value) {
 function createId(prefix = "id") {
   const random = Math.random().toString(36).slice(2, 10);
   const time = Date.now().toString(36);
+
   return `${prefix}-${time}-${random}`.slice(0, 36);
 }
 
@@ -78,7 +274,9 @@ function formatChatDate(timestamp) {
     date.getMonth() === now.getMonth() &&
     date.getDate() === now.getDate();
 
-  if (sameDay) return "Today";
+  if (sameDay) {
+    return "Today";
+  }
 
   return new Intl.DateTimeFormat([], {
     month: "short",
@@ -91,6 +289,7 @@ function showToast(message) {
   elements.toast.classList.add("show");
 
   clearTimeout(showToast.timeout);
+
   showToast.timeout = setTimeout(() => {
     elements.toast.classList.remove("show");
   }, 2600);
@@ -110,33 +309,43 @@ function escapeHtml(value) {
    ------------------------- */
 
 function loadStoredData() {
-  state.name = cleanName(localStorage.getItem(STORAGE.name));
+  state.name = cleanName(
+    localStorage.getItem(STORAGE.name)
+  );
 
   try {
-    const parsed = JSON.parse(localStorage.getItem(STORAGE.chats) || "[]");
-    state.chats = Array.isArray(parsed) ? parsed : [];
+    const parsed = JSON.parse(
+      localStorage.getItem(STORAGE.chats) || "[]"
+    );
+
+    state.chats = Array.isArray(parsed)
+      ? parsed
+      : [];
   } catch {
     state.chats = [];
   }
 
-  state.activeChatId = localStorage.getItem(STORAGE.activeChatId);
+  state.activeChatId =
+    localStorage.getItem(STORAGE.activeChatId);
 
   if (
     !state.activeChatId ||
-    !state.chats.some((chat) => chat.id === state.activeChatId)
+    !state.chats.some(
+      (chat) => chat.id === state.activeChatId
+    )
   ) {
-    state.activeChatId = state.chats[0]?.id || null;
+    state.activeChatId =
+      state.chats[0]?.id || null;
   }
 }
 
 function saveChats() {
   state.chats.sort((a, b) => {
-    const pinnedDifference =
-      Number(Boolean(b.pinned)) -
-      Number(Boolean(a.pinned));
+    const aPinned = Boolean(a.pinned);
+    const bPinned = Boolean(b.pinned);
 
-    if (pinnedDifference !== 0) {
-      return pinnedDifference;
+    if (aPinned !== bPinned) {
+      return bPinned - aPinned;
     }
 
     return b.updatedAt - a.updatedAt;
@@ -166,7 +375,9 @@ function saveChats() {
 function applyUserName(name) {
   const clean = cleanName(name);
 
-  if (!clean) return;
+  if (!clean) {
+    return;
+  }
 
   state.name = clean;
 
@@ -194,8 +405,7 @@ function applyUserName(name) {
 }
 
 function openNamePopup() {
-  elements.nameInput.value =
-    state.name;
+  elements.nameInput.value = state.name;
 
   elements.welcomeOverlay.classList.add(
     "show"
@@ -230,13 +440,11 @@ function createChat() {
 
   state.chats.unshift(chat);
 
-  state.activeChatId =
-    chat.id;
+  state.activeChatId = chat.id;
 
   saveChats();
 
   renderHistory();
-
   renderMessages();
 
   elements.messageInput.focus();
@@ -256,20 +464,17 @@ function getActiveChat() {
 function switchChat(chatId) {
   if (
     !state.chats.some(
-      (chat) =>
-        chat.id === chatId
+      (chat) => chat.id === chatId
     )
   ) {
     return;
   }
 
-  state.activeChatId =
-    chatId;
+  state.activeChatId = chatId;
 
   saveChats();
 
   renderHistory();
-
   renderMessages();
 
   elements.appSidebar.classList.remove(
@@ -277,32 +482,21 @@ function switchChat(chatId) {
   );
 }
 
-function closeHistoryMenus() {
-  document
-    .querySelectorAll(
-      ".history-options-menu.show"
-    )
-    .forEach(
-      (menu) =>
-        menu.classList.remove(
-          "show"
-        )
-    );
-}
+/* -------------------------
+   Pin chat
+   ------------------------- */
 
 function togglePinChat(chatId) {
-  const chat =
-    state.chats.find(
-      (chat) =>
-        chat.id === chatId
-    );
+  const chat = state.chats.find(
+    (chat) => chat.id === chatId
+  );
 
-  if (!chat) return;
+  if (!chat) {
+    return;
+  }
 
   chat.pinned =
-    !Boolean(
-      chat.pinned
-    );
+    !Boolean(chat.pinned);
 
   saveChats();
 
@@ -315,129 +509,112 @@ function togglePinChat(chatId) {
   );
 }
 
+/* -------------------------
+   Rename chat
+   ------------------------- */
+
 function renameChat(chatId) {
-  const chat =
-    state.chats.find(
-      (chat) =>
-        chat.id === chatId
-    );
+  const chat = state.chats.find(
+    (chat) => chat.id === chatId
+  );
 
-  if (!chat) return;
+  if (!chat) {
+    return;
+  }
 
-  const newTitle =
-    window.prompt(
-      "Rename this chat:",
-      chat.title
-    );
+  const newTitle = window.prompt(
+    "Rename this chat:",
+    chat.title
+  );
 
   if (newTitle === null) {
     return;
   }
 
-  const cleanTitle =
-    String(newTitle)
-      .trim()
-      .replace(/\s+/g, " ")
-      .slice(0, 40);
+  const cleanTitle = String(newTitle)
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, 40);
 
   if (!cleanTitle) {
-    showToast(
-      "Chat name cannot be empty"
-    );
-
     return;
   }
 
-  chat.title =
-    cleanTitle;
+  chat.title = cleanTitle;
+
+  chat.updatedAt = Date.now();
 
   saveChats();
 
   renderHistory();
 
-  showToast(
-    "Chat renamed"
-  );
+  showToast("Chat renamed");
 }
 
+/* -------------------------
+   Delete individual chat
+   ------------------------- */
+
 function deleteChat(chatId) {
-  const chat =
-    state.chats.find(
-      (chat) =>
-        chat.id === chatId
-    );
+  const chat = state.chats.find(
+    (chat) => chat.id === chatId
+  );
 
-  if (!chat) return;
+  if (!chat) {
+    return;
+  }
 
-  const okay =
-    window.confirm(
-      `Delete "${chat.title}"?`
-    );
+  const okay = window.confirm(
+    `Delete "${chat.title}"?`
+  );
 
-  if (!okay) return;
+  if (!okay) {
+    return;
+  }
 
   const deletingActiveChat =
-    state.activeChatId ===
-    chatId;
+    state.activeChatId === chatId;
 
   state.chats =
     state.chats.filter(
-      (chat) =>
-        chat.id !== chatId
+      (chat) => chat.id !== chatId
     );
 
   if (deletingActiveChat) {
     state.activeChatId =
-      null;
+      state.chats[0]?.id || null;
   }
 
   saveChats();
 
-  if (!state.chats.length) {
+  if (!state.activeChatId) {
     createChat();
   } else {
-    if (!state.activeChatId) {
-      state.activeChatId =
-        state.chats[0].id;
-
-      saveChats();
-    }
-
     renderHistory();
-
     renderMessages();
   }
 
-  showToast(
-    "Chat deleted"
-  );
+  showToast("Chat deleted");
 }
 
 function titleFromMessage(message) {
-  const clean =
-    message
-      .trim()
-      .replace(/\s+/g, " ");
+  const clean = message
+    .trim()
+    .replace(/\s+/g, " ");
 
   return clean.length > 32
     ? `${clean.slice(0, 32)}…`
     : clean;
 }
 
-function addMessage(
-  role,
-  text
-) {
-  let chat =
-    getActiveChat();
+function addMessage(role, text) {
+  let chat = getActiveChat();
 
   if (!chat) {
-    chat =
-      createChat();
+    chat = createChat();
   }
 
-  const now =
-    Date.now();
+  const now = Date.now();
 
   chat.messages.push({
     id: createId("msg"),
@@ -455,18 +632,14 @@ function addMessage(
     )
   ) {
     chat.title =
-      titleFromMessage(
-        text
-      );
+      titleFromMessage(text);
   }
 
-  chat.updatedAt =
-    now;
+  chat.updatedAt = now;
 
   saveChats();
 
   renderHistory();
-
   renderMessages();
 
   return chat;
@@ -496,16 +669,6 @@ function renderHistory() {
             ? "active"
             : "";
 
-        const pinLabel =
-          chat.pinned
-            ? "Unpin"
-            : "Pin";
-
-        const historyIcon =
-          chat.pinned
-            ? "📌"
-            : "◌";
-
         return `
           <div class="history-item-wrapper">
 
@@ -517,11 +680,10 @@ function renderHistory() {
             >
 
               <span class="history-item-icon">
-                ${historyIcon}
+                ${chat.pinned ? "◆" : "◌"}
               </span>
 
               <span class="history-item-copy">
-
                 <strong>
                   ${escapeHtml(chat.title)}
                 </strong>
@@ -533,7 +695,6 @@ function renderHistory() {
                     )
                   )}
                 </small>
-
               </span>
 
             </button>
@@ -542,7 +703,7 @@ function renderHistory() {
               class="history-options-button"
               type="button"
               data-menu-button="${escapeHtml(chat.id)}"
-              aria-label="Options for ${escapeHtml(chat.title)}"
+              aria-label="Chat options"
               title="Chat options"
             >
               •••
@@ -551,23 +712,24 @@ function renderHistory() {
             <div
               class="history-options-menu"
               data-menu="${escapeHtml(chat.id)}"
-              role="menu"
             >
 
               <button
                 type="button"
                 data-action="pin"
                 data-action-chat-id="${escapeHtml(chat.id)}"
-                role="menuitem"
               >
-                ${pinLabel}
+                ${
+                  chat.pinned
+                    ? "Unpin"
+                    : "Pin"
+                }
               </button>
 
               <button
                 type="button"
                 data-action="rename"
                 data-action-chat-id="${escapeHtml(chat.id)}"
-                role="menuitem"
               >
                 Rename
               </button>
@@ -577,7 +739,6 @@ function renderHistory() {
                 class="danger"
                 data-action="delete"
                 data-action-chat-id="${escapeHtml(chat.id)}"
-                role="menuitem"
               >
                 Delete
               </button>
@@ -589,6 +750,8 @@ function renderHistory() {
       })
       .join("");
 
+  /* Open previous chat */
+
   elements.chatHistoryList
     .querySelectorAll(
       "[data-chat-id]"
@@ -597,14 +760,14 @@ function renderHistory() {
       button.addEventListener(
         "click",
         () => {
-          closeHistoryMenus();
-
           switchChat(
             button.dataset.chatId
           );
         }
       );
     });
+
+  /* Open / close the 3-dot menu */
 
   elements.chatHistoryList
     .querySelectorAll(
@@ -627,23 +790,30 @@ function renderHistory() {
                 `[data-menu="${chatId}"]`
               );
 
-          if (!menu) return;
-
-          const wasOpen =
-            menu.classList.contains(
-              "show"
+          elements.chatHistoryList
+            .querySelectorAll(
+              ".history-options-menu.show"
+            )
+            .forEach(
+              (openMenu) => {
+                if (
+                  openMenu !== menu
+                ) {
+                  openMenu.classList.remove(
+                    "show"
+                  );
+                }
+              }
             );
 
-          closeHistoryMenus();
-
-          if (!wasOpen) {
-            menu.classList.add(
-              "show"
-            );
-          }
+          menu?.classList.toggle(
+            "show"
+          );
         }
       );
     });
+
+  /* Pin / Rename / Delete */
 
   elements.chatHistoryList
     .querySelectorAll(
@@ -664,32 +834,16 @@ function renderHistory() {
             button.dataset
               .actionChatId;
 
-          closeHistoryMenus();
-
           if (action === "pin") {
-            togglePinChat(
-              chatId
-            );
-
-            return;
-          }
-
-          if (
+            togglePinChat(chatId);
+          } else if (
             action === "rename"
           ) {
-            renameChat(
-              chatId
-            );
-
-            return;
-          }
-
-          if (
+            renameChat(chatId);
+          } else if (
             action === "delete"
           ) {
-            deleteChat(
-              chatId
-            );
+            deleteChat(chatId);
           }
         }
       );
@@ -701,12 +855,10 @@ function renderHistory() {
    ------------------------- */
 
 function renderMessages() {
-  const chat =
-    getActiveChat();
+  const chat = getActiveChat();
 
   const firstName =
-    state.name ||
-    "there";
+    state.name || "there";
 
   let html = `
     <section class="welcome-message">
@@ -730,68 +882,62 @@ function renderMessages() {
     </section>
   `;
 
-  if (
-    chat?.messages?.length
-  ) {
-    html +=
-      chat.messages
-        .map((message) => {
-          const isUser =
-            message.role ===
-            "user";
+  if (chat?.messages?.length) {
+    html += chat.messages
+      .map((message) => {
+        const isUser =
+          message.role === "user";
 
-          return `
-            <div
-              class="message-row ${
-                isUser
-                  ? "user"
-                  : "bot"
-              }"
-            >
+        return `
+          <div
+            class="message-row ${
+              isUser
+                ? "user"
+                : "bot"
+            }"
+          >
 
-              ${
-                isUser
-                  ? ""
-                  : `
-                    <img
-                      src="./assets/kilaubot-avatar.png"
-                      alt="Kilaubot avatar"
-                      class="message-avatar"
-                    />
-                  `
-              }
+            ${
+              isUser
+                ? ""
+                : `
+                  <img
+                    src="./assets/kilaubot-avatar.png"
+                    alt="Kilaubot avatar"
+                    class="message-avatar"
+                  />
+                `
+            }
 
-              <div class="message-content">
+            <div class="message-content">
 
-                <div class="message-bubble">
-                  ${escapeHtml(message.text)}
-                </div>
+              <div class="message-bubble">
+                ${escapeHtml(message.text)}
+              </div>
 
-                <div class="message-meta">
-                  ${escapeHtml(
-                    formatTime(
-                      message.createdAt
-                    )
-                  )}
-                </div>
-
+              <div class="message-meta">
+                ${escapeHtml(
+                  formatTime(
+                    message.createdAt
+                  )
+                )}
               </div>
 
             </div>
-          `;
-        })
-        .join("");
+
+          </div>
+        `;
+      })
+      .join("");
   }
 
   elements.messages.innerHTML =
     html;
 
-  requestAnimationFrame(
-    () => {
-      elements.messages.scrollTop =
-        elements.messages.scrollHeight;
-    }
-  );
+  requestAnimationFrame(() => {
+    elements.messages.scrollTop =
+      elements.messages.scrollHeight;
+  });
 }
 
 /* -------------------------
@@ -801,46 +947,37 @@ function renderMessages() {
 async function sendToKilaubot(
   message
 ) {
-  let chat =
-    getActiveChat();
+  let chat = getActiveChat();
 
   if (!chat) {
-    chat =
-      createChat();
+    chat = createChat();
   }
 
-  const response =
-    await fetch(
-      "/api/chat",
-      {
-        method:
-          "POST",
+  const response = await fetch(
+    "/api/chat",
+    {
+      method: "POST",
 
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
+      headers: {
+        "Content-Type":
+          "application/json"
+      },
 
-        body:
-          JSON.stringify({
-            message,
-            sessionId:
-              chat.sessionId
-          })
-      }
-    );
+      body: JSON.stringify({
+        message,
+        sessionId: chat.sessionId
+      })
+    }
+  );
 
-  const data =
-    await response
-      .json()
-      .catch(
-        () => ({})
-      );
+  const data = await response
+    .json()
+    .catch(() => ({}));
 
   if (!response.ok) {
     throw new Error(
       data.error ||
-      "Kilaubot could not connect. Check the website backend configuration."
+        "Kilaubot could not connect. Check the website backend configuration."
     );
   }
 
@@ -850,10 +987,9 @@ async function sendToKilaubot(
 async function sendMessage(
   rawMessage
 ) {
-  const message =
-    String(
-      rawMessage || ""
-    ).trim();
+  const message = String(
+    rawMessage || ""
+  ).trim();
 
   if (
     !message ||
@@ -862,8 +998,7 @@ async function sendMessage(
     return;
   }
 
-  state.sending =
-    true;
+  state.sending = true;
 
   elements.messageInput.value =
     "";
@@ -879,14 +1014,112 @@ async function sendMessage(
     true;
 
   elements.typingIndicator
-    .classList.remove(
-      "hidden"
-    );
+    .classList.remove("hidden");
 
   elements.suggestionRow
-    .classList.add(
-      "hidden"
+    .classList.add("hidden");
+
+  try {
+
+    /*
+      QUIZ FIRST
+
+      If the user types:
+      quiz me
+      give me a quiz
+      start quiz
+
+      OR if a quiz is already running,
+      it is handled locally.
+
+      Dialogflow is completely bypassed
+      for the quiz.
+    */
+
+    const quizReply =
+      handleLocalQuiz(
+        message
+      );
+
+    if (quizReply !== null) {
+
+      addMessage(
+        "bot",
+        quizReply
+      );
+
+      return;
+    }
+
+
+    /*
+      NORMAL KILAUBOT QUESTIONS
+
+      Anything that is NOT part of the quiz
+      continues using the existing backend.
+    */
+
+    const data =
+      await sendToKilaubot(
+        message
+      );
+
+    addMessage(
+      "bot",
+      data.reply ||
+        "I understood your question, but no response text was returned."
     );
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    addMessage(
+      "bot",
+      `I couldn't connect to the Kilaubot backend yet. ${error.message}`
+    );
+
+  }
+
+  finally {
+
+    state.sending = false;
+
+    elements.sendButton.disabled =
+      false;
+
+    elements.typingIndicator
+      .classList.add("hidden");
+
+    elements.suggestionRow
+      .classList.remove("hidden");
+
+    elements.messageInput.focus();
+
+  }
+}
+  state.sending = true;
+
+  elements.messageInput.value =
+    "";
+
+  resizeComposer();
+
+  addMessage(
+    "user",
+    message
+  );
+
+  elements.sendButton.disabled =
+    true;
+
+  elements.typingIndicator
+    .classList.remove("hidden");
+
+  elements.suggestionRow
+    .classList.add("hidden");
 
   try {
     const data =
@@ -897,33 +1130,26 @@ async function sendMessage(
     addMessage(
       "bot",
       data.reply ||
-      "I could not produce a response for that question."
+        "I could not produce a response for that question."
     );
   } catch (error) {
-    console.error(
-      error
-    );
+    console.error(error);
 
     addMessage(
       "bot",
       `I couldn't connect to the Kilaubot backend yet. ${error.message}`
     );
   } finally {
-    state.sending =
-      false;
+    state.sending = false;
 
     elements.sendButton.disabled =
       false;
 
     elements.typingIndicator
-      .classList.add(
-        "hidden"
-      );
+      .classList.add("hidden");
 
     elements.suggestionRow
-      .classList.remove(
-        "hidden"
-      );
+      .classList.remove("hidden");
 
     elements.messageInput.focus();
   }
@@ -937,8 +1163,7 @@ function resizeComposer() {
   const field =
     elements.messageInput;
 
-  field.style.height =
-    "auto";
+  field.style.height = "auto";
 
   field.style.height =
     `${Math.min(
@@ -956,37 +1181,28 @@ function prefillQuestion(
   resizeComposer();
 
   if (
-    window.innerWidth <=
-    970
+    window.innerWidth <= 970
   ) {
     document
-      .getElementById(
-        "chatPane"
-      )
+      .getElementById("chatPane")
       .scrollIntoView({
-        behavior:
-          "smooth",
-        block:
-          "start"
+        behavior: "smooth",
+        block: "start"
       });
   }
 
-  setTimeout(
-    () => {
-      elements.messageInput
-        .focus();
+  setTimeout(() => {
+    elements.messageInput.focus();
 
-      elements.messageInput
-        .setSelectionRange(
-          elements.messageInput
-            .value.length,
+    elements.messageInput
+      .setSelectionRange(
+        elements.messageInput
+          .value.length,
 
-          elements.messageInput
-            .value.length
-        );
-    },
-    280
-  );
+        elements.messageInput
+          .value.length
+      );
+  }, 280);
 }
 
 /* -------------------------
@@ -1030,22 +1246,18 @@ function setupStoryObserver() {
           return;
         }
 
-        links.forEach(
-          (link) => {
-            const target =
-              link
-                .getAttribute(
-                  "href"
-                )
-                ?.slice(1);
+        links.forEach((link) => {
+          const target =
+            link
+              .getAttribute("href")
+              ?.slice(1);
 
-            link.classList.toggle(
-              "active",
-              target ===
-                visible.target.id
-            );
-          }
-        );
+          link.classList.toggle(
+            "active",
+            target ===
+              visible.target.id
+          );
+        });
       },
       {
         root:
@@ -1061,20 +1273,14 @@ function setupStoryObserver() {
       }
     );
 
-  sections.forEach(
-    (id) => {
-      const element =
-        document.getElementById(
-          id
-        );
+  sections.forEach((id) => {
+    const element =
+      document.getElementById(id);
 
-      if (element) {
-        observer.observe(
-          element
-        );
-      }
+    if (element) {
+      observer.observe(element);
     }
-  );
+  });
 }
 
 /* -------------------------
@@ -1110,9 +1316,7 @@ elements.newChatButton
       );
 
       elements.appSidebar
-        .classList.remove(
-          "open"
-        );
+        .classList.remove("open");
     }
   );
 
@@ -1129,8 +1333,7 @@ elements.clearHistoryButton
         return;
       }
 
-      state.chats =
-        [];
+      state.chats = [];
 
       state.activeChatId =
         null;
@@ -1152,7 +1355,8 @@ elements.chatForm
       event.preventDefault();
 
       sendMessage(
-        elements.messageInput.value
+        elements.messageInput
+          .value
       );
     }
   );
@@ -1174,7 +1378,8 @@ elements.messageInput
         event.preventDefault();
 
         sendMessage(
-          elements.messageInput.value
+          elements.messageInput
+            .value
         );
       }
     }
@@ -1184,27 +1389,23 @@ document
   .querySelectorAll(
     "[data-question]"
   )
-  .forEach(
-    (button) => {
-      button.addEventListener(
-        "click",
-        () => {
-          prefillQuestion(
-            button.dataset.question
-          );
-        }
-      );
-    }
-  );
+  .forEach((button) => {
+    button.addEventListener(
+      "click",
+      () => {
+        prefillQuestion(
+          button.dataset.question
+        );
+      }
+    );
+  });
 
 elements.mobileMenuButton
   .addEventListener(
     "click",
     () => {
       elements.appSidebar
-        .classList.toggle(
-          "open"
-        );
+        .classList.toggle("open");
     }
   );
 
@@ -1212,42 +1413,66 @@ document
   .querySelectorAll(
     ".story-nav-link"
   )
-  .forEach(
-    (link) => {
-      link.addEventListener(
-        "click",
-        () => {
-          elements.appSidebar
-            .classList.remove(
-              "open"
-            );
-        }
-      );
-    }
-  );
+  .forEach((link) => {
+    link.addEventListener(
+      "click",
+      () => {
+        elements.appSidebar
+          .classList.remove(
+            "open"
+          );
+      }
+    );
+  });
+
+/* Close menus when clicking outside */
 
 document.addEventListener(
   "click",
   (event) => {
     if (
-      !event.target.closest(
-        ".history-item-wrapper"
+      event.target.closest(
+        ".history-options-menu"
+      ) ||
+      event.target.closest(
+        ".history-options-button"
       )
     ) {
-      closeHistoryMenus();
+      return;
     }
+
+    document
+      .querySelectorAll(
+        ".history-options-menu.show"
+      )
+      .forEach((menu) => {
+        menu.classList.remove(
+          "show"
+        );
+      });
   }
 );
+
+/* Close menus using Escape */
 
 document.addEventListener(
   "keydown",
   (event) => {
     if (
-      event.key ===
-      "Escape"
+      event.key !== "Escape"
     ) {
-      closeHistoryMenus();
+      return;
     }
+
+    document
+      .querySelectorAll(
+        ".history-options-menu.show"
+      )
+      .forEach((menu) => {
+        menu.classList.remove(
+          "show"
+        );
+      });
   }
 );
 
@@ -1258,13 +1483,10 @@ document.addEventListener(
 function boot() {
   loadStoredData();
 
-  if (
-    !state.activeChatId
-  ) {
+  if (!state.activeChatId) {
     createChat();
   } else {
     renderHistory();
-
     renderMessages();
   }
 
