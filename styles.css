@@ -1751,3 +1751,126 @@ a {
     margin-right: 0;
   }
 }
+
+/* =========================================================
+   PREVIOUS CHAT 3-DOT MENU — FIX
+   The JavaScript already toggles .show on .history-options-menu.
+   These styles keep the action buttons hidden until the •••
+   button is pressed and present Pin / Rename / Delete as a menu.
+   ========================================================= */
+
+.history-item-wrapper {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 4px;
+}
+
+.history-item-wrapper:has(.history-options-menu.show) {
+  z-index: 50;
+}
+
+.history-item {
+  position: relative;
+  width: 100%;
+  margin-bottom: 0;
+  padding-right: 42px;
+}
+
+.history-options-button {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+
+  border: 0;
+  border-radius: 7px;
+  color: #8fa197;
+  background: transparent;
+  cursor: pointer;
+
+  font: 700 14px/1 Arial, sans-serif;
+  letter-spacing: 1px;
+
+  opacity: 0.75;
+  transition: background 0.16s ease, color 0.16s ease, opacity 0.16s ease;
+}
+
+.history-item-wrapper:hover .history-options-button,
+.history-options-button:hover,
+.history-options-button:focus-visible {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  opacity: 1;
+}
+
+.history-options-button:focus,
+.history-options-button:active {
+  outline: none;
+  box-shadow: none;
+}
+
+.history-options-menu {
+  position: absolute;
+  z-index: 999;
+  top: calc(100% - 4px);
+  right: 7px;
+
+  display: none;
+  min-width: 138px;
+  padding: 6px;
+
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 10px;
+  background: #173227;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.30);
+}
+
+.history-options-menu.show {
+  display: grid;
+  gap: 2px;
+}
+
+.history-options-menu button {
+  display: block;
+  width: 100%;
+  min-height: 34px;
+  padding: 8px 10px;
+
+  border: 0;
+  border-radius: 7px;
+  color: #d9e3dd;
+  background: transparent;
+  cursor: pointer;
+
+  text-align: left;
+  font: 600 10px/1.2 Arial, sans-serif;
+}
+
+.history-options-menu button:hover,
+.history-options-menu button:focus-visible {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+}
+
+.history-options-menu button.danger {
+  color: #efaaa3;
+}
+
+.history-options-menu button.danger:hover,
+.history-options-menu button.danger:focus-visible {
+  color: #ffd2cd;
+  background: rgba(190, 72, 62, 0.16);
+}
+
+/* Old delete-button experiment is not used by the current app.js. */
+.history-delete-button {
+  display: none !important;
+}
