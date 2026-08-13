@@ -1,18 +1,9 @@
-/* =========================================================
-   KILAUBOT — FRONT-END APP
-   - Name popup
-   - Custom chat UI
-   - New chat
-   - Previous chat history
-   - Local browser storage
-   - Story "Ask Kilaubot" buttons
-   ========================================================= */
-
 const STORAGE = {
   name: "kilaubot_user_name_v2",
   chats: "kilaubot_chats_v2",
   activeChatId: "kilaubot_active_chat_v2"
 };
+
 
 const state = {
   name: "",
@@ -21,243 +12,652 @@ const state = {
   sending: false
 };
 
-const elements = {
-  welcomeOverlay: document.getElementById("welcomeOverlay"),
-  nameForm: document.getElementById("nameForm"),
-  nameInput: document.getElementById("nameInput"),
-  changeNameButton: document.getElementById("changeNameButton"),
-  profileName: document.getElementById("profileName"),
-  profileAvatar: document.getElementById("profileAvatar"),
 
-  newChatButton: document.getElementById("newChatButton"),
-  clearHistoryButton: document.getElementById("clearHistoryButton"),
-  chatHistoryList: document.getElementById("chatHistoryList"),
+const el = {
+  welcomeOverlay:
+    document.getElementById(
+      "welcomeOverlay"
+    ),
 
-  messages: document.getElementById("messages"),
-  typingIndicator: document.getElementById("typingIndicator"),
-  suggestionRow: document.getElementById("suggestionRow"),
-  chatForm: document.getElementById("chatForm"),
-  messageInput: document.getElementById("messageInput"),
-  sendButton: document.getElementById("sendButton"),
+  nameForm:
+    document.getElementById(
+      "nameForm"
+    ),
 
-  appSidebar: document.getElementById("appSidebar"),
-  mobileMenuButton: document.getElementById("mobileMenuButton"),
-  toast: document.getElementById("toast")
+  nameInput:
+    document.getElementById(
+      "nameInput"
+    ),
+
+  changeNameButton:
+    document.getElementById(
+      "changeNameButton"
+    ),
+
+  profileName:
+    document.getElementById(
+      "profileName"
+    ),
+
+  profileAvatar:
+    document.getElementById(
+      "profileAvatar"
+    ),
+
+  newChatButton:
+    document.getElementById(
+      "newChatButton"
+    ),
+
+  clearHistoryButton:
+    document.getElementById(
+      "clearHistoryButton"
+    ),
+
+  chatHistoryList:
+    document.getElementById(
+      "chatHistoryList"
+    ),
+
+  messages:
+    document.getElementById(
+      "messages"
+    ),
+
+  typingIndicator:
+    document.getElementById(
+      "typingIndicator"
+    ),
+
+  suggestionRow:
+    document.getElementById(
+      "suggestionRow"
+    ),
+
+  chatForm:
+    document.getElementById(
+      "chatForm"
+    ),
+
+  messageInput:
+    document.getElementById(
+      "messageInput"
+    ),
+
+  sendButton:
+    document.getElementById(
+      "sendButton"
+    ),
+
+  appSidebar:
+    document.getElementById(
+      "appSidebar"
+    ),
+
+  mobileMenuButton:
+    document.getElementById(
+      "mobileMenuButton"
+    ),
+
+  toast:
+    document.getElementById(
+      "toast"
+    )
 };
 
-/* -------------------------
-   Utilities
-   ------------------------- */
+
+/* =========================================================
+   TEXT HELPERS
+   ========================================================= */
+
+function escapeHtml(value) {
+  return String(
+    value ?? ""
+  )
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
+    .replaceAll(
+      '"',
+      "&quot;"
+    )
+    .replaceAll(
+      "'",
+      "&#039;"
+    );
+}
+
+
+/*
+  This fixes the ugly spacing problem.
+
+  It removes leading spaces from each
+  chatbot line while keeping deliberate
+  line breaks for quiz questions.
+*/
+
+function formatMessageText(value) {
+
+  const text =
+    String(
+      value ?? ""
+    )
+      .replace(
+        /\r\n?/g,
+        "\n"
+      )
+      .trim();
+
+
+  if (!text) {
+    return "";
+  }
+
+
+  const lines =
+    text
+      .split("\n")
+      .map(
+        (line) =>
+          line.trim()
+      );
+
+
+  const cleaned = [];
+
+  let previousBlank =
+    false;
+
+
+  for (
+    const line of lines
+  ) {
+
+    const blank =
+      line === "";
+
+
+    if (
+      blank &&
+      previousBlank
+    ) {
+      continue;
+    }
+
+
+    cleaned.push(
+      line
+    );
+
+
+    previousBlank =
+      blank;
+  }
+
+
+  return cleaned
+    .map(
+      escapeHtml
+    )
+    .join("<br>");
+}
+
+
+/* =========================================================
+   GENERAL HELPERS
+   ========================================================= */
 
 function cleanName(value) {
-  return String(value || "")
+
+  return String(
+    value || ""
+  )
     .trim()
-    .replace(/\s+/g, " ")
-    .slice(0, 40);
+    .replace(
+      /\s+/g,
+      " "
+    )
+    .slice(
+      0,
+      40
+    );
 }
 
-function createId(prefix = "id") {
-  const random = Math.random().toString(36).slice(2, 10);
-  const time = Date.now().toString(36);
 
-  return `${prefix}-${time}-${random}`.slice(0, 36);
+function createId(
+  prefix = "id"
+) {
+
+  const random =
+    Math
+      .random()
+      .toString(36)
+      .slice(
+        2,
+        10
+      );
+
+
+  const time =
+    Date
+      .now()
+      .toString(36);
+
+
+  return `${prefix}-${time}-${random}`
+    .slice(
+      0,
+      36
+    );
 }
 
-function formatTime(timestamp) {
-  return new Intl.DateTimeFormat([], {
-    hour: "2-digit",
-    minute: "2-digit"
-  }).format(new Date(timestamp));
+
+function formatTime(
+  timestamp
+) {
+
+  return new Intl
+    .DateTimeFormat(
+      [],
+      {
+        hour:
+          "2-digit",
+
+        minute:
+          "2-digit"
+      }
+    )
+    .format(
+      new Date(
+        timestamp
+      )
+    );
 }
 
-function formatChatDate(timestamp) {
-  const date = new Date(timestamp);
-  const now = new Date();
+
+function formatChatDate(
+  timestamp
+) {
+
+  const date =
+    new Date(
+      timestamp
+    );
+
+
+  const now =
+    new Date();
+
 
   const sameDay =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate();
+    date.getFullYear() ===
+      now.getFullYear() &&
+
+    date.getMonth() ===
+      now.getMonth() &&
+
+    date.getDate() ===
+      now.getDate();
+
 
   if (sameDay) {
     return "Today";
   }
 
-  return new Intl.DateTimeFormat([], {
-    month: "short",
-    day: "numeric"
-  }).format(date);
+
+  return new Intl
+    .DateTimeFormat(
+      [],
+      {
+        month: "short",
+        day: "numeric"
+      }
+    )
+    .format(
+      date
+    );
 }
 
-function showToast(message) {
-  if (!elements.toast) {
+
+function showToast(
+  message
+) {
+
+  if (!el.toast) {
     return;
   }
 
-  elements.toast.textContent = message;
-  elements.toast.classList.add("show");
 
-  clearTimeout(showToast.timeout);
+  el.toast.textContent =
+    message;
 
-  showToast.timeout = setTimeout(() => {
-    elements.toast.classList.remove("show");
-  }, 2600);
-}
 
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-/* -------------------------
-   Storage
-   ------------------------- */
-
-function loadStoredData() {
-  state.name = cleanName(
-    localStorage.getItem(STORAGE.name)
+  el.toast.classList.add(
+    "show"
   );
 
-  try {
-    const parsed = JSON.parse(
-      localStorage.getItem(STORAGE.chats) || "[]"
+
+  clearTimeout(
+    showToast.timer
+  );
+
+
+  showToast.timer =
+    setTimeout(
+      () => {
+
+        el.toast
+          .classList
+          .remove(
+            "show"
+          );
+
+      },
+      2200
+    );
+}
+
+
+/* =========================================================
+   STORAGE
+   ========================================================= */
+
+function loadStoredData() {
+
+  state.name =
+    cleanName(
+      localStorage
+        .getItem(
+          STORAGE.name
+        )
     );
 
-    state.chats = Array.isArray(parsed)
-      ? parsed
-      : [];
+
+  try {
+
+    const parsed =
+      JSON.parse(
+        localStorage
+          .getItem(
+            STORAGE.chats
+          ) ||
+        "[]"
+      );
+
+
+    state.chats =
+      Array.isArray(
+        parsed
+      )
+        ? parsed
+        : [];
+
   } catch {
+
     state.chats = [];
+
   }
 
+
   state.activeChatId =
-    localStorage.getItem(STORAGE.activeChatId);
+    localStorage
+      .getItem(
+        STORAGE.activeChatId
+      );
+
 
   if (
     !state.activeChatId ||
+
     !state.chats.some(
-      (chat) => chat.id === state.activeChatId
+      (chat) =>
+        chat.id ===
+        state.activeChatId
     )
   ) {
+
     state.activeChatId =
-      state.chats[0]?.id || null;
+      state.chats[0]?.id ||
+      null;
+
   }
+
 }
 
+
 function saveChats() {
-  state.chats.sort((a, b) => {
-    const pinnedDifference =
-      Number(Boolean(b.pinned)) -
-      Number(Boolean(a.pinned));
 
-    if (pinnedDifference !== 0) {
-      return pinnedDifference;
+  state.chats.sort(
+    (a, b) => {
+
+      const pinDifference =
+        Number(
+          Boolean(
+            b.pinned
+          )
+        ) -
+        Number(
+          Boolean(
+            a.pinned
+          )
+        );
+
+
+      return (
+        pinDifference ||
+
+        b.updatedAt -
+        a.updatedAt
+      );
+
     }
+  );
 
-    return b.updatedAt - a.updatedAt;
-  });
 
   localStorage.setItem(
     STORAGE.chats,
-    JSON.stringify(state.chats)
+
+    JSON.stringify(
+      state.chats
+    )
   );
 
-  if (state.activeChatId) {
+
+  if (
+    state.activeChatId
+  ) {
+
     localStorage.setItem(
       STORAGE.activeChatId,
       state.activeChatId
     );
+
   } else {
+
     localStorage.removeItem(
       STORAGE.activeChatId
     );
+
   }
+
 }
 
-/* -------------------------
-   User name
-   ------------------------- */
 
-function applyUserName(name) {
-  const clean = cleanName(name);
+/* =========================================================
+   USER NAME
+   ========================================================= */
+
+function applyUserName(
+  name
+) {
+
+  const clean =
+    cleanName(
+      name
+    );
+
 
   if (!clean) {
     return;
   }
 
-  state.name = clean;
+
+  state.name =
+    clean;
+
 
   localStorage.setItem(
     STORAGE.name,
     clean
   );
 
-  if (elements.profileName) {
-    elements.profileName.textContent = clean;
+
+  if (
+    el.profileName
+  ) {
+
+    el.profileName
+      .textContent =
+        clean;
+
   }
 
-  if (elements.profileAvatar) {
-    elements.profileAvatar.textContent =
-      clean.charAt(0).toUpperCase();
+
+  if (
+    el.profileAvatar
+  ) {
+
+    el.profileAvatar
+      .textContent =
+        clean
+          .charAt(0)
+          .toUpperCase();
+
   }
 
-  if (elements.welcomeOverlay) {
-    elements.welcomeOverlay.classList.remove("show");
 
-    elements.welcomeOverlay.setAttribute(
+  el.welcomeOverlay
+    ?.classList
+    .remove(
+      "show"
+    );
+
+
+  el.welcomeOverlay
+    ?.setAttribute(
       "aria-hidden",
       "true"
     );
-  }
+
 
   renderMessages();
+
 }
 
+
 function openNamePopup() {
-  if (!elements.welcomeOverlay) {
+
+  if (
+    !el.welcomeOverlay
+  ) {
     return;
   }
 
-  if (elements.nameInput) {
-    elements.nameInput.value = state.name;
+
+  if (
+    el.nameInput
+  ) {
+
+    el.nameInput.value =
+      state.name;
+
   }
 
-  elements.welcomeOverlay.classList.add("show");
 
-  elements.welcomeOverlay.setAttribute(
-    "aria-hidden",
-    "false"
+  el.welcomeOverlay
+    .classList
+    .add(
+      "show"
+    );
+
+
+  el.welcomeOverlay
+    .setAttribute(
+      "aria-hidden",
+      "false"
+    );
+
+
+  setTimeout(
+    () => {
+
+      el.nameInput
+        ?.focus();
+
+    },
+    80
   );
 
-  setTimeout(() => {
-    elements.nameInput?.focus();
-  }, 80);
 }
 
-/* -------------------------
-   Chat model
-   ------------------------- */
+
+/* =========================================================
+   CREATE CHAT
+   ========================================================= */
 
 function createChat() {
-  const now = Date.now();
+
+  const now =
+    Date.now();
+
 
   const chat = {
-    id: createId("chat"),
-    sessionId: createId("web"),
-    title: "New conversation",
-    pinned: false,
-    createdAt: now,
-    updatedAt: now,
-    messages: []
+
+    id:
+      createId(
+        "chat"
+      ),
+
+    sessionId:
+      createId(
+        "web"
+      ),
+
+    title:
+      "New conversation",
+
+    pinned:
+      false,
+
+    createdAt:
+      now,
+
+    updatedAt:
+      now,
+
+    messages:
+      []
+
   };
 
-  state.chats.unshift(chat);
 
-  state.activeChatId = chat.id;
+  state.chats.unshift(
+    chat
+  );
+
+
+  state.activeChatId =
+    chat.id;
+
 
   saveChats();
 
@@ -265,32 +665,48 @@ function createChat() {
 
   renderMessages();
 
-  elements.messageInput?.focus();
+
+  el.messageInput
+    ?.focus();
+
 
   return chat;
+
 }
 
+
 function getActiveChat() {
+
   return (
     state.chats.find(
       (chat) =>
-        chat.id === state.activeChatId
-    ) || null
+        chat.id ===
+        state.activeChatId
+    ) ||
+    null
   );
+
 }
 
-function switchChat(chatId) {
-  const exists =
-    state.chats.some(
-      (chat) =>
-        chat.id === chatId
-    );
 
-  if (!exists) {
+function switchChat(
+  chatId
+) {
+
+  if (
+    !state.chats.some(
+      (chat) =>
+        chat.id ===
+        chatId
+    )
+  ) {
     return;
   }
 
-  state.activeChatId = chatId;
+
+  state.activeChatId =
+    chatId;
+
 
   saveChats();
 
@@ -298,315 +714,470 @@ function switchChat(chatId) {
 
   renderMessages();
 
-  elements.appSidebar?.classList.remove(
-    "open"
-  );
+
+  el.appSidebar
+    ?.classList
+    .remove(
+      "open"
+    );
+
 }
 
+
 /* =========================================================
-   HISTORY 3-DOT MENU
+   HISTORY MENU
    ========================================================= */
 
 function closeHistoryMenus() {
+
   document
     .querySelectorAll(
       ".history-options-menu.show"
     )
-    .forEach((menu) => {
-      menu.classList.remove("show");
+    .forEach(
+      (menu) => {
 
-      menu.style.top = "";
+        menu.classList.remove(
+          "show"
+        );
 
-      menu.style.left = "";
 
-      menu.style.right = "";
-    });
+        menu.style.top =
+          "";
+
+
+        menu.style.left =
+          "";
+
+      }
+    );
+
 }
+
+
+/*
+  Position fixed means the popup does not
+  get cut off by Previous Chats scrolling.
+*/
 
 function positionHistoryMenu(
   button,
   menu
 ) {
+
   const gap = 6;
 
   const edge = 8;
 
-  const buttonRect =
-    button.getBoundingClientRect();
 
-  /*
-    Menu uses position: fixed.
+  const rect =
+    button
+      .getBoundingClientRect();
 
-    This is important because the Previous Chats
-    list has overflow/scrolling. A normal absolute
-    menu would get clipped by that container.
-  */
 
-  menu.style.top = "0px";
+  menu.style.visibility =
+    "hidden";
 
-  menu.style.left = "0px";
 
-  menu.style.right = "auto";
+  menu.classList.add(
+    "show"
+  );
 
-  const menuRect =
-    menu.getBoundingClientRect();
-
-  const menuWidth =
-    menuRect.width || 145;
-
-  const menuHeight =
-    menuRect.height || 120;
-
-  let left =
-    buttonRect.right -
-    menuWidth;
-
-  let top =
-    buttonRect.bottom +
-    gap;
-
-  /*
-    Keep menu inside left side of screen.
-  */
-
-  if (left < edge) {
-    left = edge;
-  }
-
-  /*
-    Keep menu inside right side of screen.
-  */
-
-  if (
-    left + menuWidth >
-    window.innerWidth - edge
-  ) {
-    left =
-      window.innerWidth -
-      menuWidth -
-      edge;
-  }
-
-  /*
-    If there isn't enough space below,
-    open the menu upward.
-  */
-
-  if (
-    top + menuHeight >
-    window.innerHeight - edge
-  ) {
-    top =
-      buttonRect.top -
-      menuHeight -
-      gap;
-  }
-
-  /*
-    Never let it escape above screen.
-  */
-
-  if (top < edge) {
-    top = edge;
-  }
-
-  menu.style.left =
-    `${Math.round(left)}px`;
 
   menu.style.top =
-    `${Math.round(top)}px`;
+    "0px";
+
+
+  menu.style.left =
+    "0px";
+
+
+  const menuRect =
+    menu
+      .getBoundingClientRect();
+
+
+  const width =
+    menuRect.width ||
+    136;
+
+
+  const height =
+    menuRect.height ||
+    112;
+
+
+  let left =
+    rect.right -
+    width;
+
+
+  let top =
+    rect.bottom +
+    gap;
+
+
+  if (
+    left < edge
+  ) {
+
+    left = edge;
+
+  }
+
+
+  if (
+    left + width >
+    window.innerWidth -
+    edge
+  ) {
+
+    left =
+      window.innerWidth -
+      width -
+      edge;
+
+  }
+
+
+  if (
+    top + height >
+    window.innerHeight -
+    edge
+  ) {
+
+    top =
+      rect.top -
+      height -
+      gap;
+
+  }
+
+
+  if (
+    top < edge
+  ) {
+
+    top = edge;
+
+  }
+
+
+  menu.style.left =
+    `${Math.round(
+      left
+    )}px`;
+
+
+  menu.style.top =
+    `${Math.round(
+      top
+    )}px`;
+
+
+  menu.style.visibility =
+    "visible";
+
 }
 
-/* -------------------------
-   Pin
-   ------------------------- */
 
-function togglePinChat(chatId) {
+/* =========================================================
+   PIN
+   ========================================================= */
+
+function togglePinChat(
+  chatId
+) {
+
   const chat =
     state.chats.find(
-      (chat) =>
-        chat.id === chatId
+      (item) =>
+        item.id ===
+        chatId
     );
+
 
   if (!chat) {
     return;
   }
 
+
   chat.pinned =
-    !Boolean(chat.pinned);
+    !Boolean(
+      chat.pinned
+    );
+
+
+  chat.updatedAt =
+    Date.now();
+
 
   saveChats();
 
   renderHistory();
+
 
   showToast(
     chat.pinned
       ? "Chat pinned"
       : "Chat unpinned"
   );
+
 }
 
-/* -------------------------
-   Rename
-   ------------------------- */
 
-function renameChat(chatId) {
+/* =========================================================
+   RENAME
+   ========================================================= */
+
+function renameChat(
+  chatId
+) {
+
   const chat =
     state.chats.find(
-      (chat) =>
-        chat.id === chatId
+      (item) =>
+        item.id ===
+        chatId
     );
+
 
   if (!chat) {
     return;
   }
 
-  const newTitle =
+
+  const title =
     window.prompt(
       "Rename this chat:",
       chat.title
     );
 
-  if (newTitle === null) {
+
+  if (
+    title === null
+  ) {
     return;
   }
 
-  const cleanTitle =
-    String(newTitle)
+
+  const clean =
+    String(
+      title
+    )
       .trim()
-      .replace(/\s+/g, " ")
-      .slice(0, 40);
+      .replace(
+        /\s+/g,
+        " "
+      )
+      .slice(
+        0,
+        40
+      );
 
-  if (!cleanTitle) {
-    showToast(
-      "Chat name cannot be empty"
-    );
 
+  if (!clean) {
     return;
   }
 
-  chat.title = cleanTitle;
+
+  chat.title =
+    clean;
+
 
   chat.updatedAt =
     Date.now();
+
 
   saveChats();
 
   renderHistory();
 
-  showToast("Chat renamed");
+  showToast(
+    "Chat renamed"
+  );
+
 }
 
-/* -------------------------
-   Delete
-   ------------------------- */
 
-function deleteChat(chatId) {
+/* =========================================================
+   DELETE CHAT
+   ========================================================= */
+
+function deleteChat(
+  chatId
+) {
+
   const chat =
     state.chats.find(
-      (chat) =>
-        chat.id === chatId
+      (item) =>
+        item.id ===
+        chatId
     );
+
 
   if (!chat) {
     return;
   }
+
 
   const okay =
     window.confirm(
       `Delete "${chat.title}"?`
     );
 
+
   if (!okay) {
     return;
   }
 
-  const deletingActiveChat =
+
+  const wasActive =
     state.activeChatId ===
     chatId;
 
+
   state.chats =
     state.chats.filter(
-      (chat) =>
-        chat.id !== chatId
+      (item) =>
+        item.id !==
+        chatId
     );
 
-  if (deletingActiveChat) {
-    state.activeChatId = null;
+
+  if (
+    wasActive
+  ) {
+
+    state.activeChatId =
+      state.chats[0]?.id ||
+      null;
+
   }
+
 
   saveChats();
 
-  if (!state.chats.length) {
-    createChat();
-  } else {
-    if (!state.activeChatId) {
-      state.activeChatId =
-        state.chats[0].id;
 
-      saveChats();
-    }
+  if (
+    !state.activeChatId
+  ) {
+
+    createChat();
+
+  } else {
 
     renderHistory();
 
     renderMessages();
+
   }
 
-  showToast("Chat deleted");
+
+  showToast(
+    "Chat deleted"
+  );
+
 }
 
-/* -------------------------
-   Chat titles
-   ------------------------- */
 
-function titleFromMessage(message) {
+/* =========================================================
+   MESSAGE STORAGE
+   ========================================================= */
+
+function titleFromMessage(
+  message
+) {
+
   const clean =
-    String(message)
+    String(
+      message
+    )
       .trim()
-      .replace(/\s+/g, " ");
+      .replace(
+        /\s+/g,
+        " "
+      );
 
-  return clean.length > 32
-    ? `${clean.slice(0, 32)}…`
-    : clean;
+
+  return (
+    clean.length > 28
+
+      ? `${clean.slice(
+          0,
+          28
+        )}…`
+
+      : clean
+  );
+
 }
 
-/* -------------------------
-   Add message
-   ------------------------- */
 
 function addMessage(
   role,
   text
 ) {
-  let chat = getActiveChat();
+
+  let chat =
+    getActiveChat();
+
 
   if (!chat) {
-    chat = createChat();
+
+    chat =
+      createChat();
+
   }
+
 
   const now =
     Date.now();
 
+
   chat.messages.push({
-    id: createId("msg"),
+
+    id:
+      createId(
+        "msg"
+      ),
+
     role,
-    text,
-    createdAt: now
+
+    text:
+      String(
+        text ?? ""
+      ),
+
+    createdAt:
+      now
+
   });
+
 
   if (
     role === "user" &&
+
     (
       chat.title ===
         "New conversation" ||
-      chat.messages.length <= 2
+
+      chat.messages.length <=
+        2
     )
   ) {
+
     chat.title =
-      titleFromMessage(text);
+      titleFromMessage(
+        text
+      );
+
   }
 
-  chat.updatedAt = now;
+
+  chat.updatedAt =
+    now;
+
 
   saveChats();
 
@@ -614,288 +1185,333 @@ function addMessage(
 
   renderMessages();
 
-  return chat;
 }
 
+
 /* =========================================================
-   RENDER PREVIOUS CHATS
+   RENDER HISTORY
    ========================================================= */
 
 function renderHistory() {
-  if (!elements.chatHistoryList) {
+
+  if (
+    !el.chatHistoryList
+  ) {
     return;
   }
 
-  if (!state.chats.length) {
-    elements.chatHistoryList.innerHTML = `
+
+  if (
+    !state.chats.length
+  ) {
+
+    el.chatHistoryList.innerHTML = `
       <div class="history-empty">
-        Your conversations will appear here after you start chatting.
+        Your conversations will appear here.
       </div>
     `;
 
+
     return;
+
   }
 
-  elements.chatHistoryList.innerHTML =
+
+  el.chatHistoryList.innerHTML =
     state.chats
-      .map((chat) => {
-        const isActive =
-          chat.id ===
-          state.activeChatId
-            ? "active"
-            : "";
+      .map(
+        (chat) => {
 
-        const pinLabel =
-          chat.pinned
-            ? "Unpin"
-            : "Pin";
+          const active =
+            chat.id ===
+            state.activeChatId
 
-        const historyIcon =
-          chat.pinned
-            ? "◆"
-            : "◌";
+              ? "active"
 
-        return `
-          <div class="history-item-wrapper">
+              : "";
 
-            <button
-              class="history-item ${isActive}"
-              type="button"
-              data-chat-id="${escapeHtml(
-                chat.id
-              )}"
-              title="${escapeHtml(
-                chat.title
-              )}"
-            >
 
-              <span class="history-item-icon">
-                ${historyIcon}
-              </span>
+          const pinLabel =
+            chat.pinned
 
-              <span class="history-item-copy">
+              ? "Unpin"
 
-                <strong>
-                  ${escapeHtml(
-                    chat.title
-                  )}
-                </strong>
+              : "Pin";
 
-                <small>
-                  ${escapeHtml(
-                    formatChatDate(
-                      chat.updatedAt
-                    )
-                  )}
-                </small>
 
-              </span>
+          const icon =
+            chat.pinned
 
-            </button>
+              ? "◆"
 
-            <button
-              class="history-options-button"
-              type="button"
-              data-menu-button="${escapeHtml(
-                chat.id
-              )}"
-              aria-label="Options for ${escapeHtml(
-                chat.title
-              )}"
-              title="Chat options"
-            >
-              ⋯
-            </button>
+              : "◌";
 
-            <div
-              class="history-options-menu"
-              data-menu="${escapeHtml(
-                chat.id
-              )}"
-              role="menu"
-            >
+
+          return `
+            <div class="history-item-wrapper">
 
               <button
+                class="history-item ${active}"
                 type="button"
-                data-action="pin"
-                data-action-chat-id="${escapeHtml(
-                  chat.id
-                )}"
-                role="menuitem"
+                data-chat-id="${escapeHtml(chat.id)}"
+                title="${escapeHtml(chat.title)}"
               >
-                ${pinLabel}
+
+                <span class="history-item-icon">
+                  ${icon}
+                </span>
+
+                <span class="history-item-copy">
+
+                  <strong>
+                    ${escapeHtml(chat.title)}
+                  </strong>
+
+                  <small>
+                    ${escapeHtml(formatChatDate(chat.updatedAt))}
+                  </small>
+
+                </span>
+
               </button>
 
-              <button
-                type="button"
-                data-action="rename"
-                data-action-chat-id="${escapeHtml(
-                  chat.id
-                )}"
-                role="menuitem"
-              >
-                Rename
-              </button>
 
               <button
+                class="history-options-button"
                 type="button"
-                class="danger"
-                data-action="delete"
-                data-action-chat-id="${escapeHtml(
-                  chat.id
-                )}"
-                role="menuitem"
+                data-menu-button="${escapeHtml(chat.id)}"
+                aria-label="Chat options"
+                title="Chat options"
               >
-                Delete
+                ⋯
               </button>
+
+
+              <div
+                class="history-options-menu"
+                data-menu="${escapeHtml(chat.id)}"
+                role="menu"
+              >
+
+                <button
+                  type="button"
+                  data-action="pin"
+                  data-action-chat-id="${escapeHtml(chat.id)}"
+                >
+                  ${pinLabel}
+                </button>
+
+
+                <button
+                  type="button"
+                  data-action="rename"
+                  data-action-chat-id="${escapeHtml(chat.id)}"
+                >
+                  Rename
+                </button>
+
+
+                <button
+                  type="button"
+                  class="danger"
+                  data-action="delete"
+                  data-action-chat-id="${escapeHtml(chat.id)}"
+                >
+                  Delete
+                </button>
+
+              </div>
 
             </div>
+          `;
 
-          </div>
-        `;
-      })
+        }
+      )
       .join("");
 
-  /*
-    Open a saved chat.
-  */
 
-  elements.chatHistoryList
+  /* OPEN OLD CHAT */
+
+  el.chatHistoryList
     .querySelectorAll(
       "[data-chat-id]"
     )
-    .forEach((button) => {
-      button.addEventListener(
-        "click",
-        () => {
-          closeHistoryMenus();
+    .forEach(
+      (button) => {
 
-          switchChat(
-            button.dataset.chatId
-          );
-        }
-      );
-    });
+        button.addEventListener(
+          "click",
+          () => {
 
-  /*
-    THREE DOT BUTTON
-  */
+            closeHistoryMenus();
 
-  elements.chatHistoryList
+
+            switchChat(
+              button.dataset
+                .chatId
+            );
+
+          }
+        );
+
+      }
+    );
+
+
+  /* 3 DOT BUTTON */
+
+  el.chatHistoryList
     .querySelectorAll(
       "[data-menu-button]"
     )
-    .forEach((button) => {
-      button.addEventListener(
-        "click",
-        (event) => {
-          event.preventDefault();
+    .forEach(
+      (button) => {
 
-          event.stopPropagation();
+        button.addEventListener(
+          "click",
+          (event) => {
 
-          const chatId =
-            button.dataset.menuButton;
+            event.preventDefault();
 
-          const menu =
-            elements.chatHistoryList
-              .querySelector(
-                `[data-menu="${chatId}"]`
+            event.stopPropagation();
+
+
+            const chatId =
+              button.dataset
+                .menuButton;
+
+
+            const menu =
+              el.chatHistoryList
+                .querySelector(
+                  `[data-menu="${chatId}"]`
+                );
+
+
+            if (!menu) {
+              return;
+            }
+
+
+            const wasOpen =
+              menu.classList
+                .contains(
+                  "show"
+                );
+
+
+            closeHistoryMenus();
+
+
+            if (!wasOpen) {
+
+              positionHistoryMenu(
+                button,
+                menu
               );
 
-          if (!menu) {
-            return;
+            }
+
           }
+        );
 
-          const wasOpen =
-            menu.classList.contains(
-              "show"
-            );
+      }
+    );
 
-          closeHistoryMenus();
 
-          if (!wasOpen) {
-            menu.classList.add(
-              "show"
-            );
+  /* MENU ACTIONS */
 
-            positionHistoryMenu(
-              button,
-              menu
-            );
-          }
-        }
-      );
-    });
-
-  /*
-    Pin / Rename / Delete buttons.
-  */
-
-  elements.chatHistoryList
+  el.chatHistoryList
     .querySelectorAll(
       "[data-action]"
     )
-    .forEach((button) => {
-      button.addEventListener(
-        "click",
-        (event) => {
-          event.preventDefault();
+    .forEach(
+      (button) => {
 
-          event.stopPropagation();
+        button.addEventListener(
+          "click",
+          (event) => {
 
-          const action =
-            button.dataset.action;
+            event.preventDefault();
 
-          const chatId =
-            button.dataset
-              .actionChatId;
+            event.stopPropagation();
 
-          closeHistoryMenus();
 
-          if (action === "pin") {
-            togglePinChat(
-              chatId
-            );
+            const action =
+              button.dataset
+                .action;
 
-            return;
+
+            const chatId =
+              button.dataset
+                .actionChatId;
+
+
+            closeHistoryMenus();
+
+
+            if (
+              action === "pin"
+            ) {
+
+              togglePinChat(
+                chatId
+              );
+
+            }
+
+
+            if (
+              action === "rename"
+            ) {
+
+              renameChat(
+                chatId
+              );
+
+            }
+
+
+            if (
+              action === "delete"
+            ) {
+
+              deleteChat(
+                chatId
+              );
+
+            }
+
           }
+        );
 
-          if (
-            action === "rename"
-          ) {
-            renameChat(
-              chatId
-            );
+      }
+    );
 
-            return;
-          }
-
-          if (
-            action === "delete"
-          ) {
-            deleteChat(
-              chatId
-            );
-          }
-        }
-      );
-    });
 }
 
+
 /* =========================================================
-   RENDER CHAT MESSAGES
+   RENDER MESSAGES
    ========================================================= */
 
 function renderMessages() {
-  if (!elements.messages) {
+
+  if (
+    !el.messages
+  ) {
     return;
   }
+
 
   const chat =
     getActiveChat();
 
+
   const firstName =
-    state.name || "there";
+    state.name ||
+    "there";
+
 
   let html = `
     <section class="welcome-message">
@@ -906,136 +1522,175 @@ function renderMessages() {
         class="bot-avatar"
       />
 
-      <h3>
-        Hi ${escapeHtml(
-          firstName
-        )} — I’m Kilaubot.
-      </h3>
+      <div>
 
-      <p>
-        Read the story beside me or ask a question directly.
-        You can follow up naturally with questions like
-        “why did that matter?” or “what happened after that?”
-      </p>
+        <h3>
+          Hi ${escapeHtml(firstName)} — I’m Kilaubot.
+        </h3>
+
+        <p>
+          Read the story beside me or ask a question directly.
+          You can also start the quiz by typing “quiz me”.
+        </p>
+
+      </div>
 
     </section>
   `;
 
+
   if (
     chat?.messages?.length
   ) {
+
     html +=
       chat.messages
-        .map((message) => {
-          const isUser =
-            message.role ===
-            "user";
+        .map(
+          (message) => {
 
-          return `
-            <div
-              class="message-row ${
-                isUser
-                  ? "user"
-                  : "bot"
-              }"
-            >
+            const isUser =
+              message.role ===
+              "user";
 
-              ${
-                isUser
-                  ? ""
-                  : `
-                    <img
-                      src="./assets/kilaubot-avatar.png"
-                      alt="Kilaubot avatar"
-                      class="message-avatar"
-                    />
-                  `
-              }
 
-              <div class="message-content">
+            return `
+              <div
+                class="message-row ${
+                  isUser
+                    ? "user"
+                    : "bot"
+                }"
+              >
 
-                <div class="message-bubble">
-                  ${escapeHtml(
-                    message.text
-                  )}
-                </div>
+                ${
+                  isUser
 
-                <div class="message-meta">
-                  ${escapeHtml(
-                    formatTime(
-                      message.createdAt
-                    )
-                  )}
+                    ? ""
+
+                    : `
+                      <img
+                        src="./assets/kilaubot-avatar.png"
+                        alt="Kilaubot avatar"
+                        class="message-avatar"
+                      />
+                    `
+                }
+
+
+                <div class="message-content">
+
+                  <div class="message-bubble">
+                    ${formatMessageText(message.text)}
+                  </div>
+
+                  <div class="message-meta">
+                    ${escapeHtml(formatTime(message.createdAt))}
+                  </div>
+
                 </div>
 
               </div>
+            `;
 
-            </div>
-          `;
-        })
+          }
+        )
         .join("");
+
   }
 
-  elements.messages.innerHTML =
+
+  el.messages.innerHTML =
     html;
+
 
   requestAnimationFrame(
     () => {
-      elements.messages.scrollTop =
-        elements.messages
+
+      el.messages.scrollTop =
+        el.messages
           .scrollHeight;
+
     }
   );
+
 }
 
+
 /* =========================================================
-   API
+   BACKEND
    ========================================================= */
 
 async function sendToKilaubot(
   message
 ) {
+
   let chat =
     getActiveChat();
 
+
   if (!chat) {
-    chat = createChat();
+
+    chat =
+      createChat();
+
   }
+
 
   const response =
     await fetch(
       "/api/chat",
       {
-        method: "POST",
+
+        method:
+          "POST",
+
 
         headers: {
+
           "Content-Type":
             "application/json"
+
         },
+
 
         body:
           JSON.stringify({
+
             message,
+
             sessionId:
               chat.sessionId
+
           })
+
       }
     );
+
 
   const data =
     await response
       .json()
-      .catch(() => ({}));
+      .catch(
+        () => ({})
+      );
 
-  if (!response.ok) {
+
+  if (
+    !response.ok
+  ) {
+
     throw new Error(
       data.error ||
-        "Kilaubot could not connect. Check the website backend configuration."
+      "Kilaubot could not connect."
     );
+
   }
 
+
   return data;
+
 }
+
 
 /* =========================================================
    SEND MESSAGE
@@ -1044,10 +1699,14 @@ async function sendToKilaubot(
 async function sendMessage(
   rawMessage
 ) {
+
   const message =
     String(
-      rawMessage || ""
-    ).trim();
+      rawMessage ||
+      ""
+    )
+      .trim();
+
 
   if (
     !message ||
@@ -1056,141 +1715,211 @@ async function sendMessage(
     return;
   }
 
-  state.sending = true;
 
-  elements.messageInput.value =
+  state.sending =
+    true;
+
+
+  el.messageInput.value =
     "";
 
+
   resizeComposer();
+
 
   addMessage(
     "user",
     message
   );
 
-  elements.sendButton.disabled =
+
+  el.sendButton.disabled =
     true;
 
-  elements.typingIndicator
-    ?.classList.remove(
+
+  el.typingIndicator
+    ?.classList
+    .remove(
       "hidden"
     );
 
-  elements.suggestionRow
-    ?.classList.add(
+
+  el.suggestionRow
+    ?.classList
+    .add(
       "hidden"
     );
+
 
   try {
+
     const data =
       await sendToKilaubot(
         message
       );
 
+
     addMessage(
       "bot",
+
       data.reply ||
-        "I could not produce a response for that question."
+
+      "I could not produce a response for that question."
     );
+
   } catch (error) {
-    console.error(error);
+
+    console.error(
+      error
+    );
+
 
     addMessage(
       "bot",
-      `I couldn't connect to the Kilaubot backend yet. ${error.message}`
-    );
-  } finally {
-    state.sending = false;
 
-    elements.sendButton.disabled =
+      `I couldn't connect to Kilaubot. ${error.message}`
+    );
+
+  } finally {
+
+    state.sending =
       false;
 
-    elements.typingIndicator
-      ?.classList.add(
+
+    el.sendButton.disabled =
+      false;
+
+
+    el.typingIndicator
+      ?.classList
+      .add(
         "hidden"
       );
 
-    elements.suggestionRow
-      ?.classList.remove(
+
+    el.suggestionRow
+      ?.classList
+      .remove(
         "hidden"
       );
 
-    elements.messageInput
+
+    el.messageInput
       ?.focus();
+
   }
+
 }
 
+
 /* =========================================================
-   COMPOSER
+   INPUT RESIZE
    ========================================================= */
 
 function resizeComposer() {
-  const field =
-    elements.messageInput;
 
-  if (!field) {
+  if (
+    !el.messageInput
+  ) {
     return;
   }
 
-  field.style.height =
-    "auto";
 
-  field.style.height =
-    `${Math.min(
-      field.scrollHeight,
-      130
-    )}px`;
+  el.messageInput
+    .style
+    .height =
+      "auto";
+
+
+  el.messageInput
+    .style
+    .height =
+      `${Math.min(
+        el.messageInput
+          .scrollHeight,
+        110
+      )}px`;
+
 }
+
+
+/* =========================================================
+   PREFILL STORY QUESTION
+   ========================================================= */
 
 function prefillQuestion(
   question
 ) {
+
   if (
-    !elements.messageInput
+    !el.messageInput
   ) {
     return;
   }
 
-  elements.messageInput.value =
+
+  el.messageInput.value =
     question;
+
 
   resizeComposer();
 
+
   if (
-    window.innerWidth <= 820
+    window.innerWidth <=
+    900
   ) {
+
     document
       .getElementById(
         "chatPane"
       )
       ?.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
+
+        behavior:
+          "smooth",
+
+        block:
+          "start"
+
       });
+
   }
+
 
   setTimeout(
     () => {
-      elements.messageInput
-        .focus();
 
-      elements.messageInput
-        .setSelectionRange(
-          elements.messageInput
-            .value.length,
-          elements.messageInput
-            .value.length
+      el.messageInput
+        ?.focus();
+
+
+      el.messageInput
+        ?.setSelectionRange(
+
+          el.messageInput
+            .value
+            .length,
+
+          el.messageInput
+            .value
+            .length
+
         );
+
     },
-    280
+    200
   );
+
 }
 
+
 /* =========================================================
-   STORY NAVIGATION
+   STORY NAV HIGHLIGHT
    ========================================================= */
 
 function setupStoryObserver() {
+
   if (
     !(
       "IntersectionObserver"
@@ -1200,44 +1929,65 @@ function setupStoryObserver() {
     return;
   }
 
-  const sections = [
+
+  const ids = [
+
     "storyTop",
+
     "beforeResistance",
+
     "whyResistance",
+
     "keyFigures",
+
     "timeline",
+
     "return1969",
+
     "legacy",
+
     "sources"
+
   ];
 
+
   const links = [
-    ...document.querySelectorAll(
-      ".story-nav-link"
-    )
+    ...document
+      .querySelectorAll(
+        ".story-nav-link"
+      )
   ];
+
 
   const observer =
     new IntersectionObserver(
+
       (entries) => {
+
         const visible =
           entries
+
             .filter(
               (entry) =>
-                entry.isIntersecting
+                entry
+                  .isIntersecting
             )
+
             .sort(
               (a, b) =>
                 b.intersectionRatio -
                 a.intersectionRatio
             )[0];
 
+
         if (!visible) {
           return;
         }
 
+
         links.forEach(
           (link) => {
+
             const target =
               link
                 .getAttribute(
@@ -1245,149 +1995,203 @@ function setupStoryObserver() {
                 )
                 ?.slice(1);
 
+
             link.classList.toggle(
+
               "active",
+
               target ===
                 visible.target.id
+
             );
+
           }
         );
+
       },
+
       {
+
         root:
-          document.getElementById(
-            "storyPane"
-          ),
+          document
+            .getElementById(
+              "storyPane"
+            ),
+
 
         threshold: [
           0.2,
           0.45,
           0.7
         ]
+
       }
+
     );
 
-  sections.forEach(
+
+  ids.forEach(
     (id) => {
-      const element =
-        document.getElementById(
-          id
+
+      const node =
+        document
+          .getElementById(
+            id
+          );
+
+
+      if (node) {
+
+        observer.observe(
+          node
         );
 
-      if (element) {
-        observer.observe(
-          element
-        );
       }
+
     }
   );
+
 }
+
 
 /* =========================================================
    EVENTS
    ========================================================= */
 
-elements.nameForm
+el.nameForm
   ?.addEventListener(
     "submit",
     (event) => {
+
       event.preventDefault();
 
+
       applyUserName(
-        elements.nameInput.value
+        el.nameInput.value
       );
+
     }
   );
 
-elements.changeNameButton
+
+el.changeNameButton
   ?.addEventListener(
     "click",
     openNamePopup
   );
 
-elements.newChatButton
+
+el.newChatButton
   ?.addEventListener(
     "click",
     () => {
+
       closeHistoryMenus();
 
+
       createChat();
+
 
       showToast(
         "New chat started"
       );
 
-      elements.appSidebar
-        ?.classList.remove(
+
+      el.appSidebar
+        ?.classList
+        .remove(
           "open"
         );
+
     }
   );
 
-elements.clearHistoryButton
+
+el.clearHistoryButton
   ?.addEventListener(
     "click",
     () => {
+
       const okay =
         window.confirm(
           "Clear all locally saved Kilaubot chat history from this browser?"
         );
 
+
       if (!okay) {
         return;
       }
 
-      state.chats = [];
+
+      state.chats =
+        [];
+
 
       state.activeChatId =
         null;
 
+
       saveChats();
 
+
       createChat();
+
 
       showToast(
         "Chat history cleared"
       );
+
     }
   );
 
-elements.chatForm
+
+el.chatForm
   ?.addEventListener(
     "submit",
     (event) => {
+
       event.preventDefault();
 
+
       sendMessage(
-        elements.messageInput
-          .value
+        el.messageInput.value
       );
+
     }
   );
 
-elements.messageInput
+
+el.messageInput
   ?.addEventListener(
     "input",
     resizeComposer
   );
 
-elements.messageInput
+
+el.messageInput
   ?.addEventListener(
     "keydown",
     (event) => {
+
       if (
-        event.key === "Enter" &&
+        event.key ===
+          "Enter" &&
+
         !event.shiftKey
       ) {
+
         event.preventDefault();
 
+
         sendMessage(
-          elements.messageInput
-            .value
+          el.messageInput.value
         );
+
       }
+
     }
   );
+
 
 document
   .querySelectorAll(
@@ -1395,28 +2199,37 @@ document
   )
   .forEach(
     (button) => {
+
       button.addEventListener(
         "click",
         () => {
+
           prefillQuestion(
             button.dataset
               .question
           );
+
         }
       );
+
     }
   );
 
-elements.mobileMenuButton
+
+el.mobileMenuButton
   ?.addEventListener(
     "click",
     () => {
-      elements.appSidebar
-        ?.classList.toggle(
+
+      el.appSidebar
+        ?.classList
+        .toggle(
           "open"
         );
+
     }
   );
+
 
 document
   .querySelectorAll(
@@ -1424,30 +2237,33 @@ document
   )
   .forEach(
     (link) => {
+
       link.addEventListener(
         "click",
         () => {
-          elements.appSidebar
-            ?.classList.remove(
+
+          el.appSidebar
+            ?.classList
+            .remove(
               "open"
             );
+
         }
       );
+
     }
   );
 
-/*
-  Clicking anywhere away from a menu or
-  three-dot button closes it.
-*/
 
 document.addEventListener(
   "click",
   (event) => {
+
     if (
       event.target.closest(
         ".history-options-menu"
       ) ||
+
       event.target.closest(
         ".history-options-button"
       )
@@ -1455,35 +2271,35 @@ document.addEventListener(
       return;
     }
 
+
     closeHistoryMenus();
+
   }
 );
 
-/*
-  Escape also closes menu.
-*/
 
 document.addEventListener(
   "keydown",
   (event) => {
+
     if (
-      event.key === "Escape"
+      event.key ===
+      "Escape"
     ) {
+
       closeHistoryMenus();
+
     }
+
   }
 );
 
-/*
-  If the browser moves/resizes while the menu is open,
-  close the floating menu so it can't remain in the
-  wrong position.
-*/
 
 window.addEventListener(
   "resize",
   closeHistoryMenus
 );
+
 
 window.addEventListener(
   "scroll",
@@ -1491,32 +2307,52 @@ window.addEventListener(
   true
 );
 
+
 /* =========================================================
-   BOOT
+   START
    ========================================================= */
 
 function boot() {
+
   loadStoredData();
 
-  if (!state.activeChatId) {
+
+  if (
+    !state.activeChatId
+  ) {
+
     createChat();
+
   } else {
+
     renderHistory();
 
     renderMessages();
+
   }
 
-  if (state.name) {
+
+  if (
+    state.name
+  ) {
+
     applyUserName(
       state.name
     );
+
   } else {
+
     openNamePopup();
+
   }
+
 
   setupStoryObserver();
 
+
   resizeComposer();
+
 }
+
 
 boot();
