@@ -910,14 +910,14 @@ a {
 }
 
 .bot-avatar {
+  display: grid;
+  place-items: center;
   width: 39px;
   height: 39px;
   border-radius: 11px;
-  object-fit: cover;
-  object-position: center;
-  flex-shrink: 0;
-  display: block;
-
+  color: #fff;
+  background: var(--forest-800);
+  font: 700 17px "Libre Baskerville", serif;
 }
 
 .chat-title-group h2 {
@@ -1008,13 +1008,15 @@ a {
 }
 
 .message-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  object-fit: cover;
-  object-position: center;
-  flex-shrink: 0;
-  display: block;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--forest-800);
+  font: 700 11px "Libre Baskerville", serif;
 }
 
 .message-content {
@@ -1504,44 +1506,4 @@ a {
   .welcome-card {
     padding: 30px 22px;
   }
-}
-/* Individual previous-chat delete button */
-
-.history-item {
-  position: relative;
-  padding-right: 46px;
-}
-.history-delete-button {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-
-  width: 22px;
-  height: 22px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 6px;
-
-  font-size: 13px;
-  line-height: 1;
-
-  opacity: 0.55;
-  cursor: pointer;
-
-  transition:
-    opacity 0.2s ease,
-    background 0.2s ease;
-}
-
-.history-item:hover .history-delete-button {
-  opacity: 0.85;
-}
-
-.history-delete-button:hover {
-  opacity: 1;
-  background: rgba(255, 255, 255, 0.08);
 }
