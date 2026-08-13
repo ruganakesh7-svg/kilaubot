@@ -704,7 +704,7 @@ function renderHistory() {
               )}"
               title="Chat options"
             >
-              •••
+              ⋯
             </button>
 
             <div
