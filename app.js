@@ -21,6 +21,201 @@ const state = {
   sending: false
 };
 
+/* =========================================================
+   KILAUBOT LOCAL QUIZ
+   ========================================================= */
+
+const QUIZ_QUESTIONS = [
+  {
+    question: "Who was Mat Kilau's father?",
+    answers: ["tok gajah", "imam perang rasu"],
+    explanation: "Tok Gajah, also known as Imam Perang Rasu, was Mat Kilau's father."
+  },
+  {
+    question: "Who was known as the Orang Kaya Semantan?",
+    answers: ["dato bahaman", "dato' bahaman", "datuk bahaman", "bahaman"],
+    explanation: "Dato' Bahaman was known as the Orang Kaya Semantan."
+  },
+  {
+    question: "In which state did Mat Kilau and the resistance movement operate?",
+    answers: ["pahang"],
+    explanation: "The resistance involving Mat Kilau took place in Pahang."
+  },
+  {
+    question: "Name one major issue that contributed to resistance against British administration in Pahang.",
+    answers: [
+      "british interference",
+      "interference",
+      "resident system",
+      "tax",
+      "taxation",
+      "loss of authority",
+      "loss of power",
+      "reduced authority",
+      "traditional authority",
+      "traditional rights"
+    ],
+    explanation:
+      "British interference, taxation, the Resident system and reduced traditional authority were important causes of resistance."
+  },
+  {
+    question: "In what year did Mat Kilau publicly reappear and claim his identity?",
+    answers: ["1969"],
+    explanation: "Mat Kilau publicly reappeared and claimed his identity in 1969."
+  }
+];
+
+function normalizeQuizText(text) {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9']/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isQuizStartCommand(text) {
+  const value = normalizeQuizText(text);
+
+  return [
+    "quiz",
+    "quiz me",
+    "start quiz",
+    "start the quiz",
+    "begin quiz",
+    "begin the quiz",
+    "give me a quiz",
+    "take a quiz",
+    "test my knowledge"
+  ].includes(value);
+}
+
+function isQuizCancelCommand(text) {
+  const value = normalizeQuizText(text);
+
+  return [
+    "cancel quiz",
+    "stop quiz",
+    "quit quiz",
+    "exit quiz",
+    "end quiz"
+  ].includes(value);
+}
+
+function quizAnswerCorrect(userAnswer, acceptedAnswers) {
+  const user = normalizeQuizText(userAnswer);
+
+  return acceptedAnswers.some((answer) => {
+    const accepted = normalizeQuizText(answer);
+
+    return user === accepted || user.includes(accepted);
+  });
+}
+
+function startLocalQuiz() {
+  const chat = getActiveChat();
+
+  chat.quizState = {
+    questionIndex: 0,
+    score: 0
+  };
+
+  saveChats();
+
+  return (
+    "Kilaubot Knowledge Quiz\n\n" +
+    "5 open-ended questions. Type your answers normally.\n\n" +
+    "Score: 0/5\n\n" +
+    "Question 1 of 5:\n" +
+    QUIZ_QUESTIONS[0].question +
+    '\n\nType "cancel quiz" at any time to stop.'
+  );
+}
+
+function handleLocalQuiz(message) {
+  const chat = getActiveChat();
+
+  if (!chat) {
+    return null;
+  }
+
+  if (isQuizStartCommand(message)) {
+    return startLocalQuiz();
+  }
+
+  if (!chat.quizState) {
+    return null;
+  }
+
+  if (isQuizCancelCommand(message)) {
+    delete chat.quizState;
+    saveChats();
+
+    return (
+      "Quiz cancelled.\n\n" +
+      "You can continue asking me questions about Mat Kilau."
+    );
+  }
+
+  const quizState = chat.quizState;
+  const current = QUIZ_QUESTIONS[quizState.questionIndex];
+
+  const correct = quizAnswerCorrect(
+    message,
+    current.answers
+  );
+
+  if (correct) {
+    quizState.score++;
+  }
+
+  const feedback = correct
+    ? "Correct! " + current.explanation
+    : "Not quite. " + current.explanation;
+
+  quizState.questionIndex++;
+
+  if (quizState.questionIndex >= QUIZ_QUESTIONS.length) {
+    const finalScore = quizState.score;
+
+    delete chat.quizState;
+    saveChats();
+
+    let result = "";
+
+    if (finalScore === 5) {
+      result = "Excellent! Perfect score.";
+    } else if (finalScore >= 3) {
+      result = "Good job! You have a solid understanding of the topic.";
+    } else {
+      result = "Keep exploring Kilaubot and try the quiz again.";
+    }
+
+    return (
+      feedback +
+      "\n\nQuiz Complete!" +
+      "\nFinal Score: " +
+      finalScore +
+      "/5" +
+      "\n\n" +
+      result +
+      '\n\nType "quiz me" to play again.'
+    );
+  }
+
+  saveChats();
+
+  return (
+    feedback +
+    "\n\nScore: " +
+    quizState.score +
+    "/5" +
+    "\n\nQuestion " +
+    (quizState.questionIndex + 1) +
+    " of 5:\n" +
+    QUIZ_QUESTIONS[quizState.questionIndex].question
+  );
+}
+
 const elements = {
   welcomeOverlay: document.getElementById("welcomeOverlay"),
   nameForm: document.getElementById("nameForm"),
@@ -803,6 +998,108 @@ async function sendMessage(
     return;
   }
 
+  state.sending = true;
+
+  elements.messageInput.value =
+    "";
+
+  resizeComposer();
+
+  addMessage(
+    "user",
+    message
+  );
+
+  elements.sendButton.disabled =
+    true;
+
+  elements.typingIndicator
+    .classList.remove("hidden");
+
+  elements.suggestionRow
+    .classList.add("hidden");
+
+  try {
+
+    /*
+      QUIZ FIRST
+
+      If the user types:
+      quiz me
+      give me a quiz
+      start quiz
+
+      OR if a quiz is already running,
+      it is handled locally.
+
+      Dialogflow is completely bypassed
+      for the quiz.
+    */
+
+    const quizReply =
+      handleLocalQuiz(
+        message
+      );
+
+    if (quizReply !== null) {
+
+      addMessage(
+        "bot",
+        quizReply
+      );
+
+      return;
+    }
+
+
+    /*
+      NORMAL KILAUBOT QUESTIONS
+
+      Anything that is NOT part of the quiz
+      continues using the existing backend.
+    */
+
+    const data =
+      await sendToKilaubot(
+        message
+      );
+
+    addMessage(
+      "bot",
+      data.reply ||
+        "I understood your question, but no response text was returned."
+    );
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    addMessage(
+      "bot",
+      `I couldn't connect to the Kilaubot backend yet. ${error.message}`
+    );
+
+  }
+
+  finally {
+
+    state.sending = false;
+
+    elements.sendButton.disabled =
+      false;
+
+    elements.typingIndicator
+      .classList.add("hidden");
+
+    elements.suggestionRow
+      .classList.remove("hidden");
+
+    elements.messageInput.focus();
+
+  }
+}
   state.sending = true;
 
   elements.messageInput.value =
