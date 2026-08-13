@@ -2,36 +2,77 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
   <meta
     name="description"
     content="Kilaubot — an interactive educational chatbot about Mat Kilau and the Pahang anti-British resistance."
   />
+
   <title>Kilaubot — Interactive Mat Kilau History</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  />
+
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  />
+
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Libre+Baskerville:wght@700&display=swap"
     rel="stylesheet"
   />
 
-  <link rel="stylesheet" href="./styles.css" />
+  <link
+    rel="stylesheet"
+    href="./styles.css"
+  />
 </head>
 
 <body>
-  <!-- First-visit name popup -->
-  <div class="welcome-overlay" id="welcomeOverlay" aria-hidden="true">
-    <section class="welcome-card" aria-labelledby="welcomeTitle">
-      <div class="welcome-emblem">K</div>
-      <p class="eyebrow">WELCOME TO KILAUBOT</p>
-      <h1 id="welcomeTitle">Step into the story of Mat Kilau.</h1>
+
+  <!-- NAME POPUP -->
+  <div
+    class="welcome-overlay"
+    id="welcomeOverlay"
+    aria-hidden="true"
+  >
+    <section
+      class="welcome-card"
+      aria-labelledby="welcomeTitle"
+    >
+      <div class="welcome-emblem">
+        K
+      </div>
+
+      <p class="eyebrow">
+        WELCOME TO KILAUBOT
+      </p>
+
+      <h1 id="welcomeTitle">
+        Step into the story of Mat Kilau.
+      </h1>
+
       <p class="welcome-copy">
         Enter your name to begin. Your name and chat history stay in this browser.
       </p>
 
-      <form id="nameForm" class="name-form">
-        <label for="nameInput">Your name</label>
+      <form
+        id="nameForm"
+        class="name-form"
+      >
+        <label for="nameInput">
+          Your name
+        </label>
+
         <input
           id="nameInput"
           type="text"
@@ -40,7 +81,11 @@
           autocomplete="name"
           required
         />
-        <button class="button button-primary" type="submit">
+
+        <button
+          class="button button-primary"
+          type="submit"
+        >
           Enter Kilaubot
           <span>→</span>
         </button>
@@ -48,88 +93,197 @@
     </section>
   </div>
 
+
+  <!-- APP -->
   <div class="app-shell">
-    <!-- Left app sidebar -->
-    <aside class="app-sidebar" id="appSidebar">
+
+    <!-- LEFT SIDEBAR -->
+    <aside
+      class="app-sidebar"
+      id="appSidebar"
+    >
+
       <div class="sidebar-top">
-        <a href="#storyTop" class="brand">
+
+        <a
+          href="#storyTop"
+          class="brand"
+        >
           <img
-  src="./assets/kilaubot-avatar.png"
-  alt="Kilaubot avatar"
-  class="brand-emblem"
-/>
+            src="./assets/kilaubot-avatar.png"
+            alt="Kilaubot avatar"
+            class="brand-emblem"
+          />
+
           <span class="brand-text">
-            <strong>KILAUBOT</strong>
-            <small>Interactive History</small>
+            <strong>
+              KILAUBOT
+            </strong>
+
+            <small>
+              Interactive History
+            </small>
           </span>
         </a>
 
-        <button id="newChatButton" class="new-chat-button" type="button">
-          <span class="plus-icon">+</span>
+
+        <button
+          id="newChatButton"
+          class="new-chat-button"
+          type="button"
+        >
+          <span class="plus-icon">
+            +
+          </span>
+
           New chat
         </button>
+
       </div>
 
+
+      <!-- PREVIOUS CHATS -->
       <div class="history-section">
+
         <div class="history-heading">
-          <span>Previous chats</span>
-          <button id="clearHistoryButton" class="icon-text-button" type="button">
+          <span>
+            Previous chats
+          </span>
+
+          <button
+            id="clearHistoryButton"
+            class="icon-text-button"
+            type="button"
+          >
             Clear
           </button>
         </div>
 
-        <div id="chatHistoryList" class="chat-history-list">
-          <!-- Rendered by app.js -->
+        <div
+          id="chatHistoryList"
+          class="chat-history-list"
+        >
         </div>
+
       </div>
 
-      <nav class="story-navigation" aria-label="Story navigation">
-        <p>Explore the story</p>
-        <a href="#storyTop" class="story-nav-link active">
+
+      <!-- STORY NAV -->
+      <nav
+        class="story-navigation"
+        aria-label="Story navigation"
+      >
+
+        <p>
+          Explore the story
+        </p>
+
+        <a
+          href="#storyTop"
+          class="story-nav-link active"
+        >
           <span>01</span>
           Overview
         </a>
-        <a href="#beforeResistance" class="story-nav-link">
+
+        <a
+          href="#beforeResistance"
+          class="story-nav-link"
+        >
           <span>02</span>
           Before resistance
         </a>
-        <a href="#whyResistance" class="story-nav-link">
+
+        <a
+          href="#whyResistance"
+          class="story-nav-link"
+        >
           <span>03</span>
           Why they resisted
         </a>
-        <a href="#keyFigures" class="story-nav-link">
+
+        <a
+          href="#keyFigures"
+          class="story-nav-link"
+        >
           <span>04</span>
           Key figures
         </a>
-        <a href="#timeline" class="story-nav-link">
+
+        <a
+          href="#timeline"
+          class="story-nav-link"
+        >
           <span>05</span>
           Timeline
         </a>
-        <a href="#return1969" class="story-nav-link">
+
+        <a
+          href="#return1969"
+          class="story-nav-link"
+        >
           <span>06</span>
           1969 return
         </a>
-        <a href="#legacy" class="story-nav-link">
+
+        <a
+          href="#legacy"
+          class="story-nav-link"
+        >
           <span>07</span>
           Legacy
         </a>
-        <a href="#sources" class="story-nav-link">
+
+        <a
+          href="#sources"
+          class="story-nav-link"
+        >
           <span>08</span>
           Sources
         </a>
+
       </nav>
 
+
+      <!-- PROFILE -->
       <div class="sidebar-profile">
-        <div class="profile-avatar" id="profileAvatar">A</div>
-        <div class="profile-copy">
-          <strong id="profileName">Student</strong>
-          <button id="changeNameButton" type="button">Change name</button>
+
+        <div
+          class="profile-avatar"
+          id="profileAvatar"
+        >
+          A
         </div>
+
+        <div class="profile-copy">
+
+          <strong id="profileName">
+            Student
+          </strong>
+
+          <button
+            id="changeNameButton"
+            type="button"
+          >
+            Change name
+          </button>
+
+        </div>
+
       </div>
+
     </aside>
 
-    <!-- Main story -->
-    <main class="story-pane" id="storyPane">
+
+    <!-- ==================================================
+         STORY
+         ================================================== -->
+
+    <main
+      class="story-pane"
+      id="storyPane"
+    >
+
       <button
         id="mobileMenuButton"
         class="mobile-menu-button"
@@ -139,18 +293,35 @@
         ☰
       </button>
 
-      <section class="story-hero" id="storyTop">
+
+      <!-- HERO -->
+      <section
+        class="story-hero"
+        id="storyTop"
+      >
+
         <div class="story-hero-copy">
+
           <div class="hero-meta">
-            <span>PAHANG</span>
+            <span>
+              PAHANG
+            </span>
+
             <i></i>
-            <span>LATE 19TH CENTURY</span>
+
+            <span>
+              LATE 19TH CENTURY
+            </span>
           </div>
+
 
           <h1>
             The story of
-            <span>Mat Kilau.</span>
+            <span>
+              Mat Kilau.
+            </span>
           </h1>
+
 
           <p class="hero-intro">
             Explore the people, grievances and turning points behind the Pahang
@@ -158,38 +329,83 @@
             to understand more deeply.
           </p>
 
+
           <div class="hero-actions">
-            <a href="#beforeResistance" class="button button-primary">
+
+            <a
+              href="#beforeResistance"
+              class="button button-primary"
+            >
               Start the story
               <span>↓</span>
             </a>
-            <button class="button button-secondary ask-prefill" data-question="Who was Mat Kilau?" type="button">
+
+            <button
+              class="button button-secondary ask-prefill"
+              data-question="Who was Mat Kilau?"
+              type="button"
+            >
               Ask Kilaubot
             </button>
+
           </div>
+
 
           <div class="hero-stat-row">
+
             <div>
-              <strong>1888</strong>
-              <span>British Resident accepted</span>
+              <strong>
+                1888
+              </strong>
+
+              <span>
+                British Resident accepted
+              </span>
             </div>
+
             <div>
-              <strong>1891–1895</strong>
-              <span>Resistance period</span>
+              <strong>
+                1891–1895
+              </strong>
+
+              <span>
+                Resistance period
+              </span>
             </div>
+
             <div>
-              <strong>1969</strong>
-              <span>Identity publicly revealed</span>
+              <strong>
+                1969
+              </strong>
+
+              <span>
+                Identity publicly revealed
+              </span>
             </div>
+
           </div>
+
         </div>
 
-        <div class="hero-visual" aria-label="Stylised Mat Kilau history graphic">
+
+        <!-- HERO GRAPHIC -->
+        <div
+          class="hero-visual"
+          aria-label="Stylised Mat Kilau history graphic"
+        >
+
           <div class="hero-sun"></div>
+
           <div class="portrait-frame">
+
             <div class="portrait-heading">
-              <span>MAT KILAU</span>
-              <small>Pahang resistance figure</small>
+              <span>
+                MAT KILAU
+              </span>
+
+              <small>
+                Pahang resistance figure
+              </small>
             </div>
 
             <div class="portrait-art">
@@ -198,18 +414,42 @@
             </div>
 
             <div class="portrait-footer">
-              <span>PAHANG</span>
-              <strong>1890s</strong>
+              <span>
+                PAHANG
+              </span>
+
+              <strong>
+                1890s
+              </strong>
             </div>
+
           </div>
+
         </div>
+
       </section>
 
-      <section class="chapter-section" id="beforeResistance">
-        <div class="chapter-number">02</div>
+
+      <!-- BEFORE RESISTANCE -->
+      <section
+        class="chapter-section"
+        id="beforeResistance"
+      >
+
+        <div class="chapter-number">
+          02
+        </div>
+
         <div class="chapter-content">
-          <p class="eyebrow">BEFORE THE RESISTANCE</p>
-          <h2>British intervention changed how Pahang was governed.</h2>
+
+          <p class="eyebrow">
+            BEFORE THE RESISTANCE
+          </p>
+
+          <h2>
+            British intervention changed how Pahang was governed.
+          </h2>
+
           <p>
             British influence expanded after Pahang accepted a British Resident
             in 1888. The new administrative arrangements affected areas of
@@ -217,13 +457,16 @@
             Sultan and important local chiefs.
           </p>
 
+
           <div class="pull-quote">
             <span>“</span>
+
             <p>
               The conflict was not only about foreign rule. Changes to authority,
               local rights and revenue made British reform a direct political issue.
             </p>
           </div>
+
 
           <button
             class="context-question ask-prefill"
@@ -233,14 +476,32 @@
             Ask Kilaubot: What did the British change in Pahang?
             <span>→</span>
           </button>
+
         </div>
+
       </section>
 
-      <section class="chapter-section tinted-section" id="whyResistance">
-        <div class="chapter-number">03</div>
+
+      <!-- WHY RESISTANCE -->
+      <section
+        class="chapter-section tinted-section"
+        id="whyResistance"
+      >
+
+        <div class="chapter-number">
+          03
+        </div>
+
         <div class="chapter-content">
-          <p class="eyebrow">WHY RESISTANCE GREW</p>
-          <h2>Authority, status and revenue were at stake.</h2>
+
+          <p class="eyebrow">
+            WHY RESISTANCE GREW
+          </p>
+
+          <h2>
+            Authority, status and revenue were at stake.
+          </h2>
+
           <p>
             Opposition to the Resident system was connected with reduced power
             for the Sultan, the sidelining of local chiefs and interference with
@@ -248,23 +509,52 @@
             these tensions especially concrete.
           </p>
 
+
           <div class="reason-grid">
+
             <article>
               <span>01</span>
-              <h3>Political authority</h3>
-              <p>Traditional leaders saw important areas of decision-making move away from the existing system.</p>
+
+              <h3>
+                Political authority
+              </h3>
+
+              <p>
+                Traditional leaders saw important areas of decision-making move away
+                from the existing system.
+              </p>
             </article>
+
+
             <article>
               <span>02</span>
-              <h3>Local status</h3>
-              <p>Administrative changes affected the recognised roles and standing of important local chiefs.</p>
+
+              <h3>
+                Local status
+              </h3>
+
+              <p>
+                Administrative changes affected the recognised roles and standing
+                of important local chiefs.
+              </p>
             </article>
+
+
             <article>
               <span>03</span>
-              <h3>Revenue rights</h3>
-              <p>Rights connected with tax collection and local revenue were part of the dispute.</p>
+
+              <h3>
+                Revenue rights
+              </h3>
+
+              <p>
+                Rights connected with tax collection and local revenue were part
+                of the dispute.
+              </p>
             </article>
+
           </div>
+
 
           <button
             class="context-question ask-prefill"
@@ -274,105 +564,246 @@
             Ask Kilaubot: Why did losing that power matter?
             <span>→</span>
           </button>
+
         </div>
+
       </section>
 
-      <section class="chapter-section" id="keyFigures">
-        <div class="chapter-number">04</div>
+
+      <!-- KEY FIGURES -->
+      <section
+        class="chapter-section"
+        id="keyFigures"
+      >
+
+        <div class="chapter-number">
+          04
+        </div>
+
         <div class="chapter-content">
-          <p class="eyebrow">KEY FIGURES</p>
-          <h2>The uprising was bigger than one person.</h2>
+
+          <p class="eyebrow">
+            KEY FIGURES
+          </p>
+
+          <h2>
+            The uprising was bigger than one person.
+          </h2>
+
           <p>
             Mat Kilau is remembered prominently today, but the historical record
             also shows the distinct roles of Dato' Bahaman and Tok Gajah.
           </p>
 
+
           <div class="figure-grid">
-            <article class="figure-card">
-              <div class="figure-monogram">MK</div>
-              <p class="figure-role">Resistance figure</p>
-              <h3>Mat Kilau</h3>
-              <p>
-                An important participant in the wider Pahang resistance whose
-                later public memory became strongly associated with anti-colonial struggle.
-              </p>
-              <button class="ask-prefill" data-question="Who was Mat Kilau?" type="button">
-                Ask about Mat Kilau →
-              </button>
-            </article>
 
             <article class="figure-card">
-              <div class="figure-monogram">DB</div>
-              <p class="figure-role">Orang Kaya Semantan</p>
-              <h3>Dato' Bahaman</h3>
+
+              <div class="figure-monogram">
+                MK
+              </div>
+
+              <p class="figure-role">
+                Resistance figure
+              </p>
+
+              <h3>
+                Mat Kilau
+              </h3>
+
+              <p>
+                An important participant in the wider Pahang resistance whose later
+                public memory became strongly associated with anti-colonial struggle.
+              </p>
+
+              <button
+                class="ask-prefill"
+                data-question="Who was Mat Kilau?"
+                type="button"
+              >
+                Ask about Mat Kilau →
+              </button>
+
+            </article>
+
+
+            <article class="figure-card">
+
+              <div class="figure-monogram">
+                DB
+              </div>
+
+              <p class="figure-role">
+                Orang Kaya Semantan
+              </p>
+
+              <h3>
+                Dato' Bahaman
+              </h3>
+
               <p>
                 A central early leader whose conflict with British interference
                 in Semantan formed an important trigger for the uprising.
               </p>
-              <button class="ask-prefill" data-question="Who was Dato Bahaman and why was he important?" type="button">
+
+              <button
+                class="ask-prefill"
+                data-question="Who was Dato Bahaman and why was he important?"
+                type="button"
+              >
                 Ask about Bahaman →
               </button>
+
             </article>
 
+
             <article class="figure-card">
-              <div class="figure-monogram">TG</div>
-              <p class="figure-role">Mat Kilau's father</p>
-              <h3>Tok Gajah</h3>
+
+              <div class="figure-monogram">
+                TG
+              </div>
+
+              <p class="figure-role">
+                Mat Kilau's father
+              </p>
+
+              <h3>
+                Tok Gajah
+              </h3>
+
               <p>
                 An important Pahang figure associated with the resistance and
                 Mat Kilau's family connection to the wider leadership network.
               </p>
-              <button class="ask-prefill" data-question="Who was Tok Gajah?" type="button">
+
+              <button
+                class="ask-prefill"
+                data-question="Who was Tok Gajah?"
+                type="button"
+              >
                 Ask about Tok Gajah →
               </button>
+
             </article>
+
           </div>
+
         </div>
+
       </section>
 
-      <section class="chapter-section timeline-section" id="timeline">
-        <div class="chapter-number">05</div>
+
+      <!-- TIMELINE -->
+      <section
+        class="chapter-section timeline-section"
+        id="timeline"
+      >
+
+        <div class="chapter-number">
+          05
+        </div>
+
         <div class="chapter-content">
-          <p class="eyebrow">TIMELINE</p>
-          <h2>Five moments that frame the story.</h2>
+
+          <p class="eyebrow">
+            TIMELINE
+          </p>
+
+          <h2>
+            Five moments that frame the story.
+          </h2>
+
 
           <div class="timeline-list">
+
             <article>
-              <strong>1888</strong>
+              <strong>
+                1888
+              </strong>
+
               <div>
-                <h3>British Resident accepted</h3>
-                <p>British administrative influence in Pahang expands.</p>
+                <h3>
+                  British Resident accepted
+                </h3>
+
+                <p>
+                  British administrative influence in Pahang expands.
+                </p>
               </div>
             </article>
+
+
             <article>
-              <strong>1891</strong>
+              <strong>
+                1891
+              </strong>
+
               <div>
-                <h3>Resistance breaks out</h3>
-                <p>Dato' Bahaman is central to the early anti-British uprising.</p>
+                <h3>
+                  Resistance breaks out
+                </h3>
+
+                <p>
+                  Dato' Bahaman is central to the early anti-British uprising.
+                </p>
               </div>
             </article>
+
+
             <article>
-              <strong>1892</strong>
+              <strong>
+                1892
+              </strong>
+
               <div>
-                <h3>Mat Kilau appears in archival reporting</h3>
-                <p>Colonial records show that he was active during the conflict.</p>
+                <h3>
+                  Mat Kilau appears in archival reporting
+                </h3>
+
+                <p>
+                  Colonial records show that he was active during the conflict.
+                </p>
               </div>
             </article>
+
+
             <article>
-              <strong>1895</strong>
+              <strong>
+                1895
+              </strong>
+
               <div>
-                <h3>Tembeling telegram</h3>
-                <p>A telegram reports Mat Kilau and followers in the Tembeling area.</p>
+                <h3>
+                  Tembeling telegram
+                </h3>
+
+                <p>
+                  A telegram reports Mat Kilau and followers in the Tembeling area.
+                </p>
               </div>
             </article>
+
+
             <article>
-              <strong>1969</strong>
+              <strong>
+                1969
+              </strong>
+
               <div>
-                <h3>A dramatic identity claim</h3>
-                <p>A man publicly declares in Kuantan that he is Mat Kilau, leading to an investigation.</p>
+                <h3>
+                  A dramatic identity claim
+                </h3>
+
+                <p>
+                  A man publicly declares in Kuantan that he is Mat Kilau, leading
+                  to an investigation.
+                </p>
               </div>
             </article>
+
           </div>
+
 
           <button
             class="context-question ask-prefill"
@@ -382,24 +813,43 @@
             Ask Kilaubot for the full timeline
             <span>→</span>
           </button>
+
         </div>
+
       </section>
 
-      <section class="chapter-section tinted-section" id="return1969">
-        <div class="chapter-number">06</div>
+
+      <!-- 1969 -->
+      <section
+        class="chapter-section tinted-section"
+        id="return1969"
+      >
+
+        <div class="chapter-number">
+          06
+        </div>
+
         <div class="chapter-content">
-          <p class="eyebrow">THE 1969 RETURN</p>
-          <h2>A story believed finished suddenly reopened.</h2>
-          <p>
-            Mat Kilau had disappeared from public view and was widely believed
-            dead. On 27 December 1969, a man publicly declared in Kuantan that
-            he was Mat Kilau.
+
+          <p class="eyebrow">
+            THE 1969 RETURN
           </p>
+
+          <h2>
+            A story believed finished suddenly reopened.
+          </h2>
+
+          <p>
+            Mat Kilau had disappeared from public view and was widely believed dead.
+            On 27 December 1969, a man publicly declared in Kuantan that he was Mat Kilau.
+          </p>
+
           <p>
             The identity was not accepted simply because of the declaration.
-            A committee investigated the claim, making the episode a useful
-            example of how historical claims can be tested rather than repeated uncritically.
+            A committee investigated the claim, making the episode a useful example
+            of how historical claims can be tested rather than repeated uncritically.
           </p>
+
 
           <button
             class="context-question ask-prefill"
@@ -409,44 +859,94 @@
             Ask Kilaubot about 1969
             <span>→</span>
           </button>
+
         </div>
+
       </section>
 
-      <section class="chapter-section" id="legacy">
-        <div class="chapter-number">07</div>
+
+      <!-- LEGACY -->
+      <section
+        class="chapter-section"
+        id="legacy"
+      >
+
+        <div class="chapter-number">
+          07
+        </div>
+
         <div class="chapter-content">
-          <p class="eyebrow">LEGACY</p>
-          <h2>History and memory are not exactly the same thing.</h2>
+
+          <p class="eyebrow">
+            LEGACY
+          </p>
+
+          <h2>
+            History and memory are not exactly the same thing.
+          </h2>
+
           <p>
             Mat Kilau remains prominent because his story connects local Pahang
             history with wider themes of colonial intervention, political authority,
             resistance and national memory.
           </p>
+
           <p>
             Modern commemoration often celebrates courage and anti-colonial struggle,
             while historical study adds complexity by examining the roles of other
             leaders and the evidence behind later claims.
           </p>
+
         </div>
+
       </section>
 
-      <section class="chapter-section source-section" id="sources">
-        <div class="chapter-number">08</div>
+
+      <!-- SOURCES -->
+      <section
+        class="chapter-section source-section"
+        id="sources"
+      >
+
+        <div class="chapter-number">
+          08
+        </div>
+
         <div class="chapter-content">
-          <p class="eyebrow">SOURCE-AWARE HISTORY</p>
-          <h2>Kilaubot is designed to show uncertainty when the evidence is uncertain.</h2>
-          <p>
-            The knowledge base prioritises archival, governmental and scholarly
-            material. It is designed to acknowledge disputed details rather than
-            force every source into one version of the story.
+
+          <p class="eyebrow">
+            SOURCE-AWARE HISTORY
           </p>
 
+          <h2>
+            Kilaubot is designed to show uncertainty when the evidence is uncertain.
+          </h2>
+
+          <p>
+            The knowledge base prioritises archival, governmental and scholarly material.
+            It is designed to acknowledge disputed details rather than force every
+            source into one version of the story.
+          </p>
+
+
           <div class="source-chip-row">
-            <span>Arkib Negara Malaysia</span>
-            <span>Pahang State Government</span>
-            <span>Polis Diraja Malaysia</span>
-            <span>Academic research</span>
+            <span>
+              Arkib Negara Malaysia
+            </span>
+
+            <span>
+              Pahang State Government
+            </span>
+
+            <span>
+              Polis Diraja Malaysia
+            </span>
+
+            <span>
+              Academic research
+            </span>
           </div>
+
 
           <button
             class="context-question ask-prefill"
@@ -456,58 +956,139 @@
             Ask Kilaubot about its sources
             <span>→</span>
           </button>
+
         </div>
+
       </section>
 
+
       <footer class="story-footer">
+
         <div>
-          <span class="brand-emblem">K</span>
-          <strong>KILAUBOT</strong>
+          <span class="brand-emblem">
+            K
+          </span>
+
+          <strong>
+            KILAUBOT
+          </strong>
         </div>
-        <p>Interactive educational AI project · Mat Kilau & Pahang history</p>
+
+        <p>
+          Interactive educational AI project · Mat Kilau & Pahang history
+        </p>
+
       </footer>
+
     </main>
 
-    <!-- Right custom chat panel -->
-    <aside class="chat-pane" id="chatPane">
+
+    <!-- ==================================================
+         CHAT
+         ================================================== -->
+
+    <aside
+      class="chat-pane"
+      id="chatPane"
+    >
+
       <header class="chat-header">
+
         <div class="chat-title-group">
+
           <img
-    src="assets/kilaubot-avatar.png"
-    alt="Kilaubot avatar"
-    class="bot-avatar"
-/>
+            src="./assets/kilaubot-avatar.png"
+            alt="Kilaubot avatar"
+            class="bot-avatar"
+          />
+
           <div>
-            <h2>Kilaubot</h2>
-            <p><span class="online-dot"></span> Mat Kilau history assistant</p>
+            <h2>
+              Kilaubot
+            </h2>
+
+            <p>
+              <span class="online-dot"></span>
+              Mat Kilau history assistant
+            </p>
           </div>
+
         </div>
 
-        
       </header>
 
+
       <div class="chat-context-card">
-        <span>CURRENT TOPIC</span>
-        <strong>Mat Kilau & the Pahang resistance</strong>
-        <p>Ask naturally — follow-up questions like “why did that matter?” are supported.</p>
+
+        <span>
+          CURRENT TOPIC
+        </span>
+
+        <strong>
+          Mat Kilau & the Pahang resistance
+        </strong>
+
+        <p>
+          Ask naturally — follow-up questions like “why did that matter?” are supported.
+        </p>
+
       </div>
 
-      <div id="messages" class="messages" aria-live="polite">
-        <!-- Rendered by app.js -->
+
+      <div
+        id="messages"
+        class="messages"
+        aria-live="polite"
+      >
       </div>
 
-      <div id="typingIndicator" class="typing-indicator hidden">
-        <span></span><span></span><span></span>
+
+      <div
+        id="typingIndicator"
+        class="typing-indicator hidden"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
       </div>
 
-      <div id="suggestionRow" class="suggestion-row">
-        <button data-question="Who was Mat Kilau?" type="button">Who was Mat Kilau?</button>
-        <button data-question="Why did the resistance begin?" type="button">Why did they resist?</button>
-        <button data-question="What happened in 1969?" type="button">What happened in 1969?</button>
+
+      <div
+        id="suggestionRow"
+        class="suggestion-row"
+      >
+
+        <button
+          data-question="Who was Mat Kilau?"
+          type="button"
+        >
+          Who was Mat Kilau?
+        </button>
+
+        <button
+          data-question="Why did the resistance begin?"
+          type="button"
+        >
+          Why did they resist?
+        </button>
+
+        <button
+          data-question="What happened in 1969?"
+          type="button"
+        >
+          What happened in 1969?
+        </button>
+
       </div>
 
-      <form id="chatForm" class="chat-form">
+
+      <form
+        id="chatForm"
+        class="chat-form"
+      >
+
         <div class="composer">
+
           <textarea
             id="messageInput"
             rows="1"
@@ -515,20 +1096,40 @@
             placeholder="Ask Kilaubot anything about the story..."
             aria-label="Message Kilaubot"
           ></textarea>
-          <button id="sendButton" type="submit" aria-label="Send message">
+
+          <button
+            id="sendButton"
+            type="submit"
+            aria-label="Send message"
+          >
             ↑
           </button>
+
         </div>
+
 
         <p class="composer-note">
           Kilaubot answers from its historical knowledge base and may flag disputed details.
         </p>
+
       </form>
+
     </aside>
+
   </div>
 
-  <div class="toast" id="toast" role="status"></div>
 
-  <script src="./app.js" defer></script>
+  <div
+    class="toast"
+    id="toast"
+    role="status"
+  ></div>
+
+
+  <script
+    src="./app.js"
+    defer
+  ></script>
+
 </body>
 </html>
