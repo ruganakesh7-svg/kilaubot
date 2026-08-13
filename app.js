@@ -21,6 +21,7 @@ const state = {
   sending: false
 };
 
+
 /* =========================================================
    KILAUBOT LOCAL QUIZ
    ========================================================= */
@@ -28,25 +29,45 @@ const state = {
 const QUIZ_QUESTIONS = [
   {
     question: "Who was Mat Kilau's father?",
-    answers: ["tok gajah", "imam perang rasu"],
-    explanation: "Tok Gajah, also known as Imam Perang Rasu, was Mat Kilau's father."
+    answers: [
+      "tok gajah",
+      "imam perang rasu"
+    ],
+    explanation:
+      "Tok Gajah, also known as Imam Perang Rasu, was Mat Kilau's father."
   },
+
   {
-    question: "Who was known as the Orang Kaya Semantan?",
-    answers: ["dato bahaman", "dato' bahaman", "datuk bahaman", "bahaman"],
-    explanation: "Dato' Bahaman was known as the Orang Kaya Semantan."
+    question:
+      "Who was known as the Orang Kaya Semantan?",
+    answers: [
+      "dato bahaman",
+      "dato' bahaman",
+      "datuk bahaman",
+      "bahaman"
+    ],
+    explanation:
+      "Dato' Bahaman was known as the Orang Kaya Semantan."
   },
+
   {
-    question: "In which state did Mat Kilau and the resistance movement operate?",
-    answers: ["pahang"],
-    explanation: "The resistance involving Mat Kilau took place in Pahang."
+    question:
+      "In which state did Mat Kilau and the resistance movement operate?",
+    answers: [
+      "pahang"
+    ],
+    explanation:
+      "The resistance involving Mat Kilau took place in Pahang."
   },
+
   {
-    question: "Name one major issue that contributed to resistance against British administration in Pahang.",
+    question:
+      "Name one major issue that contributed to resistance against British administration in Pahang.",
     answers: [
       "british interference",
       "interference",
       "resident system",
+      "resident",
       "tax",
       "taxation",
       "loss of authority",
@@ -58,12 +79,18 @@ const QUIZ_QUESTIONS = [
     explanation:
       "British interference, taxation, the Resident system and reduced traditional authority were important causes of resistance."
   },
+
   {
-    question: "In what year did Mat Kilau publicly reappear and claim his identity?",
-    answers: ["1969"],
-    explanation: "Mat Kilau publicly reappeared and claimed his identity in 1969."
+    question:
+      "In what year did Mat Kilau publicly reappear and claim his identity?",
+    answers: [
+      "1969"
+    ],
+    explanation:
+      "Mat Kilau publicly reappeared and claimed his identity in 1969."
   }
 ];
+
 
 function normalizeQuizText(text) {
   return String(text || "")
@@ -73,8 +100,10 @@ function normalizeQuizText(text) {
     .trim();
 }
 
+
 function isQuizStartCommand(text) {
-  const value = normalizeQuizText(text);
+  const value =
+    normalizeQuizText(text);
 
   return [
     "quiz",
@@ -89,8 +118,10 @@ function isQuizStartCommand(text) {
   ].includes(value);
 }
 
+
 function isQuizCancelCommand(text) {
-  const value = normalizeQuizText(text);
+  const value =
+    normalizeQuizText(text);
 
   return [
     "cancel quiz",
@@ -101,18 +132,35 @@ function isQuizCancelCommand(text) {
   ].includes(value);
 }
 
-function quizAnswerCorrect(userAnswer, acceptedAnswers) {
-  const user = normalizeQuizText(userAnswer);
 
-  return acceptedAnswers.some((answer) => {
-    const accepted = normalizeQuizText(answer);
+function quizAnswerCorrect(
+  userAnswer,
+  acceptedAnswers
+) {
+  const user =
+    normalizeQuizText(userAnswer);
 
-    return user === accepted || user.includes(accepted);
-  });
+  return acceptedAnswers.some(
+    (answer) => {
+      const accepted =
+        normalizeQuizText(answer);
+
+      return (
+        user === accepted ||
+        user.includes(accepted)
+      );
+    }
+  );
 }
 
+
 function startLocalQuiz() {
-  const chat = getActiveChat();
+  const chat =
+    getActiveChat();
+
+  if (!chat) {
+    return null;
+  }
 
   chat.quizState = {
     questionIndex: 0,
@@ -123,7 +171,7 @@ function startLocalQuiz() {
 
   return (
     "Kilaubot Knowledge Quiz\n\n" +
-    "5 open-ended questions. Type your answers normally.\n\n" +
+    "There are 5 open-ended questions. Type your answers normally.\n\n" +
     "Score: 0/5\n\n" +
     "Question 1 of 5:\n" +
     QUIZ_QUESTIONS[0].question +
@@ -131,23 +179,38 @@ function startLocalQuiz() {
   );
 }
 
+
 function handleLocalQuiz(message) {
-  const chat = getActiveChat();
+  const chat =
+    getActiveChat();
 
   if (!chat) {
     return null;
   }
 
-  if (isQuizStartCommand(message)) {
+
+  /* START OR RESTART QUIZ */
+
+  if (
+    isQuizStartCommand(message)
+  ) {
     return startLocalQuiz();
   }
 
-  if (!chat.quizState) {
-    return null;
-  }
 
-  if (isQuizCancelCommand(message)) {
+  /* CANCEL QUIZ */
+
+  if (
+    isQuizCancelCommand(message)
+  ) {
+    if (!chat.quizState) {
+      return (
+        'There is no active quiz. Type "quiz me" to start one.'
+      );
+    }
+
     delete chat.quizState;
+
     saveChats();
 
     return (
@@ -156,44 +219,94 @@ function handleLocalQuiz(message) {
     );
   }
 
-  const quizState = chat.quizState;
-  const current = QUIZ_QUESTIONS[quizState.questionIndex];
 
-  const correct = quizAnswerCorrect(
-    message,
-    current.answers
-  );
+  /* NOT IN QUIZ */
+
+  if (!chat.quizState) {
+    return null;
+  }
+
+
+  const quizState =
+    chat.quizState;
+
+  const current =
+    QUIZ_QUESTIONS[
+      quizState.questionIndex
+    ];
+
+
+  if (!current) {
+    delete chat.quizState;
+
+    saveChats();
+
+    return (
+      'The quiz has ended. Type "quiz me" to start again.'
+    );
+  }
+
+
+  const correct =
+    quizAnswerCorrect(
+      message,
+      current.answers
+    );
+
 
   if (correct) {
     quizState.score++;
   }
 
-  const feedback = correct
-    ? "Correct! " + current.explanation
-    : "Not quite. " + current.explanation;
+
+  const feedback =
+    correct
+      ? "Correct! " +
+        current.explanation
+      : "Not quite. " +
+        current.explanation;
+
 
   quizState.questionIndex++;
 
-  if (quizState.questionIndex >= QUIZ_QUESTIONS.length) {
-    const finalScore = quizState.score;
+
+  /* QUIZ FINISHED */
+
+  if (
+    quizState.questionIndex >=
+    QUIZ_QUESTIONS.length
+  ) {
+    const finalScore =
+      quizState.score;
 
     delete chat.quizState;
+
     saveChats();
 
     let result = "";
 
     if (finalScore === 5) {
-      result = "Excellent! Perfect score.";
-    } else if (finalScore >= 3) {
-      result = "Good job! You have a solid understanding of the topic.";
-    } else {
-      result = "Keep exploring Kilaubot and try the quiz again.";
+      result =
+        "Excellent! Perfect score.";
     }
+
+    else if (
+      finalScore >= 3
+    ) {
+      result =
+        "Good job! You have a solid understanding of Mat Kilau and the Pahang resistance.";
+    }
+
+    else {
+      result =
+        "Keep exploring Kilaubot and try the quiz again.";
+    }
+
 
     return (
       feedback +
       "\n\nQuiz Complete!" +
-      "\nFinal Score: " +
+      "\n\nFinal Score: " +
       finalScore +
       "/5" +
       "\n\n" +
@@ -202,7 +315,11 @@ function handleLocalQuiz(message) {
     );
   }
 
+
+  /* NEXT QUESTION */
+
   saveChats();
+
 
   return (
     feedback +
@@ -210,35 +327,113 @@ function handleLocalQuiz(message) {
     quizState.score +
     "/5" +
     "\n\nQuestion " +
-    (quizState.questionIndex + 1) +
+    (
+      quizState.questionIndex + 1
+    ) +
     " of 5:\n" +
-    QUIZ_QUESTIONS[quizState.questionIndex].question
+    QUIZ_QUESTIONS[
+      quizState.questionIndex
+    ].question
   );
 }
 
+
+/* =========================================================
+   ELEMENTS
+   ========================================================= */
+
 const elements = {
-  welcomeOverlay: document.getElementById("welcomeOverlay"),
-  nameForm: document.getElementById("nameForm"),
-  nameInput: document.getElementById("nameInput"),
-  changeNameButton: document.getElementById("changeNameButton"),
-  profileName: document.getElementById("profileName"),
-  profileAvatar: document.getElementById("profileAvatar"),
+  welcomeOverlay:
+    document.getElementById(
+      "welcomeOverlay"
+    ),
 
-  newChatButton: document.getElementById("newChatButton"),
-  clearHistoryButton: document.getElementById("clearHistoryButton"),
-  chatHistoryList: document.getElementById("chatHistoryList"),
+  nameForm:
+    document.getElementById(
+      "nameForm"
+    ),
 
-  messages: document.getElementById("messages"),
-  typingIndicator: document.getElementById("typingIndicator"),
-  suggestionRow: document.getElementById("suggestionRow"),
-  chatForm: document.getElementById("chatForm"),
-  messageInput: document.getElementById("messageInput"),
-  sendButton: document.getElementById("sendButton"),
+  nameInput:
+    document.getElementById(
+      "nameInput"
+    ),
 
-  appSidebar: document.getElementById("appSidebar"),
-  mobileMenuButton: document.getElementById("mobileMenuButton"),
-  toast: document.getElementById("toast")
+  changeNameButton:
+    document.getElementById(
+      "changeNameButton"
+    ),
+
+  profileName:
+    document.getElementById(
+      "profileName"
+    ),
+
+  profileAvatar:
+    document.getElementById(
+      "profileAvatar"
+    ),
+
+  newChatButton:
+    document.getElementById(
+      "newChatButton"
+    ),
+
+  clearHistoryButton:
+    document.getElementById(
+      "clearHistoryButton"
+    ),
+
+  chatHistoryList:
+    document.getElementById(
+      "chatHistoryList"
+    ),
+
+  messages:
+    document.getElementById(
+      "messages"
+    ),
+
+  typingIndicator:
+    document.getElementById(
+      "typingIndicator"
+    ),
+
+  suggestionRow:
+    document.getElementById(
+      "suggestionRow"
+    ),
+
+  chatForm:
+    document.getElementById(
+      "chatForm"
+    ),
+
+  messageInput:
+    document.getElementById(
+      "messageInput"
+    ),
+
+  sendButton:
+    document.getElementById(
+      "sendButton"
+    ),
+
+  appSidebar:
+    document.getElementById(
+      "appSidebar"
+    ),
+
+  mobileMenuButton:
+    document.getElementById(
+      "mobileMenuButton"
+    ),
+
+  toast:
+    document.getElementById(
+      "toast"
+    )
 };
+
 
 /* -------------------------
    Utilities
@@ -251,256 +446,407 @@ function cleanName(value) {
     .slice(0, 40);
 }
 
-function createId(prefix = "id") {
-  const random = Math.random().toString(36).slice(2, 10);
-  const time = Date.now().toString(36);
 
-  return `${prefix}-${time}-${random}`.slice(0, 36);
+function createId(prefix = "id") {
+  const random =
+    Math.random()
+      .toString(36)
+      .slice(2, 10);
+
+  const time =
+    Date.now()
+      .toString(36);
+
+  return `${prefix}-${time}-${random}`
+    .slice(0, 36);
 }
+
 
 function formatTime(timestamp) {
-  return new Intl.DateTimeFormat([], {
-    hour: "2-digit",
-    minute: "2-digit"
-  }).format(new Date(timestamp));
+  return new Intl.DateTimeFormat(
+    [],
+    {
+      hour: "2-digit",
+      minute: "2-digit"
+    }
+  ).format(
+    new Date(timestamp)
+  );
 }
 
+
 function formatChatDate(timestamp) {
-  const date = new Date(timestamp);
-  const now = new Date();
+  const date =
+    new Date(timestamp);
+
+  const now =
+    new Date();
 
   const sameDay =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate();
+    date.getFullYear() ===
+      now.getFullYear() &&
+    date.getMonth() ===
+      now.getMonth() &&
+    date.getDate() ===
+      now.getDate();
 
   if (sameDay) {
     return "Today";
   }
 
-  return new Intl.DateTimeFormat([], {
-    month: "short",
-    day: "numeric"
-  }).format(date);
+  return new Intl.DateTimeFormat(
+    [],
+    {
+      month: "short",
+      day: "numeric"
+    }
+  ).format(date);
 }
+
 
 function showToast(message) {
-  elements.toast.textContent = message;
-  elements.toast.classList.add("show");
+  elements.toast.textContent =
+    message;
 
-  clearTimeout(showToast.timeout);
+  elements.toast.classList.add(
+    "show"
+  );
 
-  showToast.timeout = setTimeout(() => {
-    elements.toast.classList.remove("show");
-  }, 2600);
+  clearTimeout(
+    showToast.timeout
+  );
+
+  showToast.timeout =
+    setTimeout(
+      () => {
+        elements.toast
+          .classList.remove(
+            "show"
+          );
+      },
+      2600
+    );
 }
+
 
 function escapeHtml(value) {
   return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
+    .replaceAll(
+      '"',
+      "&quot;"
+    )
+    .replaceAll(
+      "'",
+      "&#039;"
+    );
 }
+
 
 /* -------------------------
    Storage
    ------------------------- */
 
 function loadStoredData() {
-  state.name = cleanName(
-    localStorage.getItem(STORAGE.name)
-  );
-
-  try {
-    const parsed = JSON.parse(
-      localStorage.getItem(STORAGE.chats) || "[]"
+  state.name =
+    cleanName(
+      localStorage.getItem(
+        STORAGE.name
+      )
     );
 
-    state.chats = Array.isArray(parsed)
-      ? parsed
-      : [];
-  } catch {
+  try {
+    const parsed =
+      JSON.parse(
+        localStorage.getItem(
+          STORAGE.chats
+        ) || "[]"
+      );
+
+    state.chats =
+      Array.isArray(parsed)
+        ? parsed
+        : [];
+  }
+
+  catch {
     state.chats = [];
   }
 
+
   state.activeChatId =
-    localStorage.getItem(STORAGE.activeChatId);
+    localStorage.getItem(
+      STORAGE.activeChatId
+    );
+
 
   if (
     !state.activeChatId ||
     !state.chats.some(
-      (chat) => chat.id === state.activeChatId
+      (chat) =>
+        chat.id ===
+        state.activeChatId
     )
   ) {
     state.activeChatId =
-      state.chats[0]?.id || null;
+      state.chats[0]?.id ||
+      null;
   }
 }
 
+
 function saveChats() {
-  state.chats.sort((a, b) => {
-    const aPinned = Boolean(a.pinned);
-    const bPinned = Boolean(b.pinned);
+  state.chats.sort(
+    (a, b) => {
+      const aPinned =
+        Boolean(a.pinned);
 
-    if (aPinned !== bPinned) {
-      return bPinned - aPinned;
+      const bPinned =
+        Boolean(b.pinned);
+
+      if (
+        aPinned !== bPinned
+      ) {
+        return (
+          bPinned -
+          aPinned
+        );
+      }
+
+      return (
+        b.updatedAt -
+        a.updatedAt
+      );
     }
+  );
 
-    return b.updatedAt - a.updatedAt;
-  });
 
   localStorage.setItem(
     STORAGE.chats,
-    JSON.stringify(state.chats)
+    JSON.stringify(
+      state.chats
+    )
   );
+
 
   if (state.activeChatId) {
     localStorage.setItem(
       STORAGE.activeChatId,
       state.activeChatId
     );
-  } else {
+  }
+
+  else {
     localStorage.removeItem(
       STORAGE.activeChatId
     );
   }
 }
 
+
 /* -------------------------
    User name
    ------------------------- */
 
 function applyUserName(name) {
-  const clean = cleanName(name);
+  const clean =
+    cleanName(name);
 
   if (!clean) {
     return;
   }
 
-  state.name = clean;
+  state.name =
+    clean;
 
   localStorage.setItem(
     STORAGE.name,
     clean
   );
 
-  elements.profileName.textContent =
+  elements.profileName
+    .textContent =
     clean;
 
-  elements.profileAvatar.textContent =
-    clean.charAt(0).toUpperCase();
+  elements.profileAvatar
+    .textContent =
+    clean
+      .charAt(0)
+      .toUpperCase();
 
-  elements.welcomeOverlay.classList.remove(
-    "show"
-  );
+  elements.welcomeOverlay
+    .classList.remove(
+      "show"
+    );
 
-  elements.welcomeOverlay.setAttribute(
-    "aria-hidden",
-    "true"
-  );
+  elements.welcomeOverlay
+    .setAttribute(
+      "aria-hidden",
+      "true"
+    );
 
   renderMessages();
 }
 
+
 function openNamePopup() {
-  elements.nameInput.value = state.name;
+  elements.nameInput.value =
+    state.name;
 
-  elements.welcomeOverlay.classList.add(
-    "show"
+  elements.welcomeOverlay
+    .classList.add(
+      "show"
+    );
+
+  elements.welcomeOverlay
+    .setAttribute(
+      "aria-hidden",
+      "false"
+    );
+
+  setTimeout(
+    () => {
+      elements.nameInput
+        .focus();
+    },
+    80
   );
-
-  elements.welcomeOverlay.setAttribute(
-    "aria-hidden",
-    "false"
-  );
-
-  setTimeout(() => {
-    elements.nameInput.focus();
-  }, 80);
 }
+
 
 /* -------------------------
    Chat model
    ------------------------- */
 
 function createChat() {
-  const now = Date.now();
+  const now =
+    Date.now();
 
   const chat = {
-    id: createId("chat"),
-    sessionId: createId("web"),
-    title: "New conversation",
-    pinned: false,
-    createdAt: now,
-    updatedAt: now,
-    messages: []
+    id:
+      createId(
+        "chat"
+      ),
+
+    sessionId:
+      createId(
+        "web"
+      ),
+
+    title:
+      "New conversation",
+
+    pinned:
+      false,
+
+    createdAt:
+      now,
+
+    updatedAt:
+      now,
+
+    messages:
+      []
   };
 
-  state.chats.unshift(chat);
 
-  state.activeChatId = chat.id;
+  state.chats.unshift(
+    chat
+  );
+
+  state.activeChatId =
+    chat.id;
 
   saveChats();
 
   renderHistory();
+
   renderMessages();
 
-  elements.messageInput.focus();
+  elements.messageInput
+    .focus();
 
   return chat;
 }
+
 
 function getActiveChat() {
   return (
     state.chats.find(
       (chat) =>
-        chat.id === state.activeChatId
+        chat.id ===
+        state.activeChatId
     ) || null
   );
 }
 
+
 function switchChat(chatId) {
   if (
     !state.chats.some(
-      (chat) => chat.id === chatId
+      (chat) =>
+        chat.id ===
+        chatId
     )
   ) {
     return;
   }
 
-  state.activeChatId = chatId;
+
+  state.activeChatId =
+    chatId;
 
   saveChats();
 
   renderHistory();
+
   renderMessages();
 
-  elements.appSidebar.classList.remove(
-    "open"
-  );
+  elements.appSidebar
+    .classList.remove(
+      "open"
+    );
 }
+
 
 /* -------------------------
    Pin chat
    ------------------------- */
 
 function togglePinChat(chatId) {
-  const chat = state.chats.find(
-    (chat) => chat.id === chatId
-  );
+  const chat =
+    state.chats.find(
+      (chat) =>
+        chat.id ===
+        chatId
+    );
 
   if (!chat) {
     return;
   }
 
+
   chat.pinned =
-    !Boolean(chat.pinned);
+    !Boolean(
+      chat.pinned
+    );
+
 
   saveChats();
 
   renderHistory();
+
 
   showToast(
     chat.pinned
@@ -509,246 +855,370 @@ function togglePinChat(chatId) {
   );
 }
 
+
 /* -------------------------
    Rename chat
    ------------------------- */
 
 function renameChat(chatId) {
-  const chat = state.chats.find(
-    (chat) => chat.id === chatId
-  );
+  const chat =
+    state.chats.find(
+      (chat) =>
+        chat.id ===
+        chatId
+    );
 
   if (!chat) {
     return;
   }
 
-  const newTitle = window.prompt(
-    "Rename this chat:",
-    chat.title
-  );
 
-  if (newTitle === null) {
+  const newTitle =
+    window.prompt(
+      "Rename this chat:",
+      chat.title
+    );
+
+
+  if (
+    newTitle === null
+  ) {
     return;
   }
 
-  const cleanTitle = String(newTitle)
-    .trim()
-    .replace(/\s+/g, " ")
-    .slice(0, 40);
+
+  const cleanTitle =
+    String(newTitle)
+      .trim()
+      .replace(
+        /\s+/g,
+        " "
+      )
+      .slice(
+        0,
+        40
+      );
+
 
   if (!cleanTitle) {
     return;
   }
 
-  chat.title = cleanTitle;
 
-  chat.updatedAt = Date.now();
+  chat.title =
+    cleanTitle;
+
+  chat.updatedAt =
+    Date.now();
+
 
   saveChats();
 
   renderHistory();
 
-  showToast("Chat renamed");
+  showToast(
+    "Chat renamed"
+  );
 }
+
 
 /* -------------------------
    Delete individual chat
    ------------------------- */
 
 function deleteChat(chatId) {
-  const chat = state.chats.find(
-    (chat) => chat.id === chatId
-  );
+  const chat =
+    state.chats.find(
+      (chat) =>
+        chat.id ===
+        chatId
+    );
+
 
   if (!chat) {
     return;
   }
 
-  const okay = window.confirm(
-    `Delete "${chat.title}"?`
-  );
+
+  const okay =
+    window.confirm(
+      `Delete "${chat.title}"?`
+    );
+
 
   if (!okay) {
     return;
   }
 
+
   const deletingActiveChat =
-    state.activeChatId === chatId;
+    state.activeChatId ===
+    chatId;
+
 
   state.chats =
     state.chats.filter(
-      (chat) => chat.id !== chatId
+      (chat) =>
+        chat.id !==
+        chatId
     );
 
-  if (deletingActiveChat) {
+
+  if (
+    deletingActiveChat
+  ) {
     state.activeChatId =
-      state.chats[0]?.id || null;
+      state.chats[0]?.id ||
+      null;
   }
+
 
   saveChats();
 
-  if (!state.activeChatId) {
+
+  if (
+    !state.activeChatId
+  ) {
     createChat();
-  } else {
+  }
+
+  else {
     renderHistory();
+
     renderMessages();
   }
 
-  showToast("Chat deleted");
+
+  showToast(
+    "Chat deleted"
+  );
 }
+
 
 function titleFromMessage(message) {
-  const clean = message
-    .trim()
-    .replace(/\s+/g, " ");
+  const clean =
+    message
+      .trim()
+      .replace(
+        /\s+/g,
+        " "
+      );
 
-  return clean.length > 32
-    ? `${clean.slice(0, 32)}…`
-    : clean;
+  return (
+    clean.length > 32
+      ? `${clean.slice(
+          0,
+          32
+        )}…`
+      : clean
+  );
 }
 
-function addMessage(role, text) {
-  let chat = getActiveChat();
+
+function addMessage(
+  role,
+  text
+) {
+  let chat =
+    getActiveChat();
 
   if (!chat) {
-    chat = createChat();
+    chat =
+      createChat();
   }
 
-  const now = Date.now();
+
+  const now =
+    Date.now();
+
 
   chat.messages.push({
-    id: createId("msg"),
+    id:
+      createId(
+        "msg"
+      ),
+
     role,
+
     text,
-    createdAt: now
+
+    createdAt:
+      now
   });
+
 
   if (
     role === "user" &&
     (
       chat.title ===
         "New conversation" ||
-      chat.messages.length <= 2
+      chat.messages.length <=
+        2
     )
   ) {
     chat.title =
-      titleFromMessage(text);
+      titleFromMessage(
+        text
+      );
   }
 
-  chat.updatedAt = now;
+
+  chat.updatedAt =
+    now;
+
 
   saveChats();
 
   renderHistory();
+
   renderMessages();
+
 
   return chat;
 }
+
 
 /* -------------------------
    Render history
    ------------------------- */
 
 function renderHistory() {
-  if (!state.chats.length) {
-    elements.chatHistoryList.innerHTML = `
-      <div class="history-empty">
-        Your conversations will appear here after you start chatting.
-      </div>
-    `;
+  if (
+    !state.chats.length
+  ) {
+    elements
+      .chatHistoryList
+      .innerHTML = `
+        <div class="history-empty">
+          Your conversations will appear here after you start chatting.
+        </div>
+      `;
 
     return;
   }
 
-  elements.chatHistoryList.innerHTML =
+
+  elements
+    .chatHistoryList
+    .innerHTML =
     state.chats
-      .map((chat) => {
-        const isActive =
-          chat.id ===
-          state.activeChatId
-            ? "active"
-            : "";
+      .map(
+        (chat) => {
+          const isActive =
+            chat.id ===
+            state.activeChatId
+              ? "active"
+              : "";
 
-        return `
-          <div class="history-item-wrapper">
 
-            <button
-              class="history-item ${isActive}"
-              type="button"
-              data-chat-id="${escapeHtml(chat.id)}"
-              title="${escapeHtml(chat.title)}"
-            >
-
-              <span class="history-item-icon">
-                ${chat.pinned ? "◆" : "◌"}
-              </span>
-
-              <span class="history-item-copy">
-                <strong>
-                  ${escapeHtml(chat.title)}
-                </strong>
-
-                <small>
-                  ${escapeHtml(
-                    formatChatDate(
-                      chat.updatedAt
-                    )
-                  )}
-                </small>
-              </span>
-
-            </button>
-
-            <button
-              class="history-options-button"
-              type="button"
-              data-menu-button="${escapeHtml(chat.id)}"
-              aria-label="Chat options"
-              title="Chat options"
-            >
-              •••
-            </button>
-
-            <div
-              class="history-options-menu"
-              data-menu="${escapeHtml(chat.id)}"
-            >
+          return `
+            <div class="history-item-wrapper">
 
               <button
+                class="history-item ${isActive}"
                 type="button"
-                data-action="pin"
-                data-action-chat-id="${escapeHtml(chat.id)}"
+                data-chat-id="${escapeHtml(
+                  chat.id
+                )}"
+                title="${escapeHtml(
+                  chat.title
+                )}"
               >
-                ${
-                  chat.pinned
-                    ? "Unpin"
-                    : "Pin"
-                }
+
+                <span class="history-item-icon">
+                  ${
+                    chat.pinned
+                      ? "◆"
+                      : "◌"
+                  }
+                </span>
+
+                <span class="history-item-copy">
+
+                  <strong>
+                    ${escapeHtml(
+                      chat.title
+                    )}
+                  </strong>
+
+                  <small>
+                    ${escapeHtml(
+                      formatChatDate(
+                        chat.updatedAt
+                      )
+                    )}
+                  </small>
+
+                </span>
+
               </button>
 
-              <button
-                type="button"
-                data-action="rename"
-                data-action-chat-id="${escapeHtml(chat.id)}"
-              >
-                Rename
-              </button>
 
               <button
+                class="history-options-button"
                 type="button"
-                class="danger"
-                data-action="delete"
-                data-action-chat-id="${escapeHtml(chat.id)}"
+                data-menu-button="${escapeHtml(
+                  chat.id
+                )}"
+                aria-label="Chat options"
+                title="Chat options"
               >
-                Delete
+                •••
               </button>
+
+
+              <div
+                class="history-options-menu"
+                data-menu="${escapeHtml(
+                  chat.id
+                )}"
+              >
+
+                <button
+                  type="button"
+                  data-action="pin"
+                  data-action-chat-id="${escapeHtml(
+                    chat.id
+                  )}"
+                >
+                  ${
+                    chat.pinned
+                      ? "Unpin"
+                      : "Pin"
+                  }
+                </button>
+
+
+                <button
+                  type="button"
+                  data-action="rename"
+                  data-action-chat-id="${escapeHtml(
+                    chat.id
+                  )}"
+                >
+                  Rename
+                </button>
+
+
+                <button
+                  type="button"
+                  class="danger"
+                  data-action="delete"
+                  data-action-chat-id="${escapeHtml(
+                    chat.id
+                  )}"
+                >
+                  Delete
+                </button>
+
+              </div>
 
             </div>
-
-          </div>
-        `;
-      })
+          `;
+        }
+      )
       .join("");
+
 
   /* Open previous chat */
 
@@ -756,62 +1226,87 @@ function renderHistory() {
     .querySelectorAll(
       "[data-chat-id]"
     )
-    .forEach((button) => {
-      button.addEventListener(
-        "click",
-        () => {
-          switchChat(
-            button.dataset.chatId
+    .forEach(
+      (button) => {
+        button
+          .addEventListener(
+            "click",
+            () => {
+              switchChat(
+                button
+                  .dataset
+                  .chatId
+              );
+            }
           );
-        }
-      );
-    });
+      }
+    );
 
-  /* Open / close the 3-dot menu */
+
+  /* Open / close three-dot menu */
 
   elements.chatHistoryList
     .querySelectorAll(
       "[data-menu-button]"
     )
-    .forEach((button) => {
-      button.addEventListener(
-        "click",
-        (event) => {
-          event.preventDefault();
+    .forEach(
+      (button) => {
+        button
+          .addEventListener(
+            "click",
+            (event) => {
+              event
+                .preventDefault();
 
-          event.stopPropagation();
+              event
+                .stopPropagation();
 
-          const chatId =
-            button.dataset.menuButton;
 
-          const menu =
-            elements.chatHistoryList
-              .querySelector(
-                `[data-menu="${chatId}"]`
-              );
+              const chatId =
+                button
+                  .dataset
+                  .menuButton;
 
-          elements.chatHistoryList
-            .querySelectorAll(
-              ".history-options-menu.show"
-            )
-            .forEach(
-              (openMenu) => {
-                if (
-                  openMenu !== menu
-                ) {
-                  openMenu.classList.remove(
-                    "show"
+
+              const menu =
+                elements
+                  .chatHistoryList
+                  .querySelector(
+                    `[data-menu="${chatId}"]`
                   );
-                }
-              }
-            );
 
-          menu?.classList.toggle(
-            "show"
+
+              elements
+                .chatHistoryList
+                .querySelectorAll(
+                  ".history-options-menu.show"
+                )
+                .forEach(
+                  (openMenu) => {
+                    if (
+                      openMenu !==
+                      menu
+                    ) {
+                      openMenu
+                        .classList
+                        .remove(
+                          "show"
+                        );
+                    }
+                  }
+                );
+
+
+              menu
+                ?.classList
+                .toggle(
+                  "show"
+                );
+            }
           );
-        }
-      );
-    });
+      }
+    );
+
 
   /* Pin / Rename / Delete */
 
@@ -819,46 +1314,77 @@ function renderHistory() {
     .querySelectorAll(
       "[data-action]"
     )
-    .forEach((button) => {
-      button.addEventListener(
-        "click",
-        (event) => {
-          event.preventDefault();
+    .forEach(
+      (button) => {
+        button
+          .addEventListener(
+            "click",
+            (event) => {
+              event
+                .preventDefault();
 
-          event.stopPropagation();
+              event
+                .stopPropagation();
 
-          const action =
-            button.dataset.action;
 
-          const chatId =
-            button.dataset
-              .actionChatId;
+              const action =
+                button
+                  .dataset
+                  .action;
 
-          if (action === "pin") {
-            togglePinChat(chatId);
-          } else if (
-            action === "rename"
-          ) {
-            renameChat(chatId);
-          } else if (
-            action === "delete"
-          ) {
-            deleteChat(chatId);
-          }
-        }
-      );
-    });
+
+              const chatId =
+                button
+                  .dataset
+                  .actionChatId;
+
+
+              if (
+                action ===
+                "pin"
+              ) {
+                togglePinChat(
+                  chatId
+                );
+              }
+
+              else if (
+                action ===
+                "rename"
+              ) {
+                renameChat(
+                  chatId
+                );
+              }
+
+              else if (
+                action ===
+                "delete"
+              ) {
+                deleteChat(
+                  chatId
+                );
+              }
+            }
+          );
+      }
+    );
 }
+
 
 /* -------------------------
    Render messages
    ------------------------- */
 
 function renderMessages() {
-  const chat = getActiveChat();
+  const chat =
+    getActiveChat();
+
 
   const firstName =
-    state.name || "there";
+    state.name ||
+    "there";
+
 
   let html = `
     <section class="welcome-message">
@@ -870,7 +1396,9 @@ function renderMessages() {
       />
 
       <h3>
-        Hi ${escapeHtml(firstName)} — I’m Kilaubot.
+        Hi ${escapeHtml(
+          firstName
+        )} — I’m Kilaubot.
       </h3>
 
       <p>
@@ -882,63 +1410,81 @@ function renderMessages() {
     </section>
   `;
 
-  if (chat?.messages?.length) {
-    html += chat.messages
-      .map((message) => {
-        const isUser =
-          message.role === "user";
 
-        return `
-          <div
-            class="message-row ${
-              isUser
-                ? "user"
-                : "bot"
-            }"
-          >
+  if (
+    chat?.messages?.length
+  ) {
+    html +=
+      chat.messages
+        .map(
+          (message) => {
+            const isUser =
+              message.role ===
+              "user";
 
-            ${
-              isUser
-                ? ""
-                : `
-                  <img
-                    src="./assets/kilaubot-avatar.png"
-                    alt="Kilaubot avatar"
-                    class="message-avatar"
-                  />
-                `
-            }
 
-            <div class="message-content">
+            return `
+              <div
+                class="message-row ${
+                  isUser
+                    ? "user"
+                    : "bot"
+                }"
+              >
 
-              <div class="message-bubble">
-                ${escapeHtml(message.text)}
+                ${
+                  isUser
+                    ? ""
+                    : `
+                      <img
+                        src="./assets/kilaubot-avatar.png"
+                        alt="Kilaubot avatar"
+                        class="message-avatar"
+                      />
+                    `
+                }
+
+                <div class="message-content">
+
+                  <div class="message-bubble">
+                    ${escapeHtml(
+                      message.text
+                    )}
+                  </div>
+
+                  <div class="message-meta">
+                    ${escapeHtml(
+                      formatTime(
+                        message
+                          .createdAt
+                      )
+                    )}
+                  </div>
+
+                </div>
+
               </div>
-
-              <div class="message-meta">
-                ${escapeHtml(
-                  formatTime(
-                    message.createdAt
-                  )
-                )}
-              </div>
-
-            </div>
-
-          </div>
-        `;
-      })
-      .join("");
+            `;
+          }
+        )
+        .join("");
   }
+
 
   elements.messages.innerHTML =
     html;
 
-  requestAnimationFrame(() => {
-    elements.messages.scrollTop =
-      elements.messages.scrollHeight;
-  });
+
+  requestAnimationFrame(
+    () => {
+      elements.messages
+        .scrollTop =
+        elements.messages
+          .scrollHeight;
+    }
+  );
 }
+
 
 /* -------------------------
    API
@@ -947,49 +1493,73 @@ function renderMessages() {
 async function sendToKilaubot(
   message
 ) {
-  let chat = getActiveChat();
+  let chat =
+    getActiveChat();
+
 
   if (!chat) {
-    chat = createChat();
+    chat =
+      createChat();
   }
 
-  const response = await fetch(
-    "/api/chat",
-    {
-      method: "POST",
 
-      headers: {
-        "Content-Type":
-          "application/json"
-      },
+  const response =
+    await fetch(
+      "/api/chat",
+      {
+        method:
+          "POST",
 
-      body: JSON.stringify({
-        message,
-        sessionId: chat.sessionId
-      })
-    }
-  );
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
 
-  const data = await response
-    .json()
-    .catch(() => ({}));
+        body:
+          JSON.stringify({
+            message,
+
+            sessionId:
+              chat.sessionId
+          })
+      }
+    );
+
+
+  const data =
+    await response
+      .json()
+      .catch(
+        () => ({})
+      );
+
 
   if (!response.ok) {
     throw new Error(
       data.error ||
-        "Kilaubot could not connect. Check the website backend configuration."
+      "Kilaubot could not connect. Check the website backend configuration."
     );
   }
+
 
   return data;
 }
 
+
+/* =========================================================
+   SEND MESSAGE
+   QUIZ IS CHECKED BEFORE BACKEND
+   ========================================================= */
+
 async function sendMessage(
   rawMessage
 ) {
-  const message = String(
-    rawMessage || ""
-  ).trim();
+  const message =
+    String(
+      rawMessage ||
+      ""
+    ).trim();
+
 
   if (
     !message ||
@@ -998,42 +1568,52 @@ async function sendMessage(
     return;
   }
 
-  state.sending = true;
+
+  state.sending =
+    true;
+
 
   elements.messageInput.value =
     "";
 
+
   resizeComposer();
+
 
   addMessage(
     "user",
     message
   );
 
+
   elements.sendButton.disabled =
     true;
 
+
   elements.typingIndicator
-    .classList.remove("hidden");
+    .classList
+    .remove(
+      "hidden"
+    );
+
 
   elements.suggestionRow
-    .classList.add("hidden");
+    .classList
+    .add(
+      "hidden"
+    );
+
 
   try {
 
     /*
-      QUIZ FIRST
+      IMPORTANT:
 
-      If the user types:
-      quiz me
-      give me a quiz
-      start quiz
+      The quiz is handled completely
+      in the browser.
 
-      OR if a quiz is already running,
-      it is handled locally.
-
-      Dialogflow is completely bypassed
-      for the quiz.
+      It DOES NOT go to Dialogflow.
+      It DOES NOT go to Apps Script.
     */
 
     const quizReply =
@@ -1041,8 +1621,10 @@ async function sendMessage(
         message
       );
 
-    if (quizReply !== null) {
 
+    if (
+      quizReply !== null
+    ) {
       addMessage(
         "bot",
         quizReply
@@ -1053,10 +1635,8 @@ async function sendMessage(
 
 
     /*
-      NORMAL KILAUBOT QUESTIONS
-
-      Anything that is NOT part of the quiz
-      continues using the existing backend.
+      NORMAL HISTORICAL QUESTIONS
+      STILL GO TO KILAUBOT BACKEND
     */
 
     const data =
@@ -1064,20 +1644,26 @@ async function sendMessage(
         message
       );
 
+
     addMessage(
       "bot",
+
       data.reply ||
-        "I understood your question, but no response text was returned."
+      "I understood your question, but no response text was returned."
     );
 
   }
 
   catch (error) {
 
-    console.error(error);
+    console.error(
+      error
+    );
+
 
     addMessage(
       "bot",
+
       `I couldn't connect to the Kilaubot backend yet. ${error.message}`
     );
 
@@ -1085,75 +1671,33 @@ async function sendMessage(
 
   finally {
 
-    state.sending = false;
+    state.sending =
+      false;
+
 
     elements.sendButton.disabled =
       false;
 
+
     elements.typingIndicator
-      .classList.add("hidden");
-
-    elements.suggestionRow
-      .classList.remove("hidden");
-
-    elements.messageInput.focus();
-
-  }
-}
-  state.sending = true;
-
-  elements.messageInput.value =
-    "";
-
-  resizeComposer();
-
-  addMessage(
-    "user",
-    message
-  );
-
-  elements.sendButton.disabled =
-    true;
-
-  elements.typingIndicator
-    .classList.remove("hidden");
-
-  elements.suggestionRow
-    .classList.add("hidden");
-
-  try {
-    const data =
-      await sendToKilaubot(
-        message
+      .classList
+      .add(
+        "hidden"
       );
 
-    addMessage(
-      "bot",
-      data.reply ||
-        "I could not produce a response for that question."
-    );
-  } catch (error) {
-    console.error(error);
-
-    addMessage(
-      "bot",
-      `I couldn't connect to the Kilaubot backend yet. ${error.message}`
-    );
-  } finally {
-    state.sending = false;
-
-    elements.sendButton.disabled =
-      false;
-
-    elements.typingIndicator
-      .classList.add("hidden");
 
     elements.suggestionRow
-      .classList.remove("hidden");
+      .classList
+      .remove(
+        "hidden"
+      );
 
-    elements.messageInput.focus();
+
+    elements.messageInput
+      .focus();
   }
 }
+
 
 /* -------------------------
    Composer
@@ -1163,7 +1707,10 @@ function resizeComposer() {
   const field =
     elements.messageInput;
 
-  field.style.height = "auto";
+
+  field.style.height =
+    "auto";
+
 
   field.style.height =
     `${Math.min(
@@ -1172,38 +1719,55 @@ function resizeComposer() {
     )}px`;
 }
 
+
 function prefillQuestion(
   question
 ) {
   elements.messageInput.value =
     question;
 
+
   resizeComposer();
 
+
   if (
-    window.innerWidth <= 970
+    window.innerWidth <=
+    970
   ) {
     document
-      .getElementById("chatPane")
+      .getElementById(
+        "chatPane"
+      )
       .scrollIntoView({
-        behavior: "smooth",
-        block: "start"
+        behavior:
+          "smooth",
+
+        block:
+          "start"
       });
   }
 
-  setTimeout(() => {
-    elements.messageInput.focus();
 
-    elements.messageInput
-      .setSelectionRange(
-        elements.messageInput
-          .value.length,
+  setTimeout(
+    () => {
+      elements.messageInput
+        .focus();
 
-        elements.messageInput
-          .value.length
-      );
-  }, 280);
+
+      elements.messageInput
+        .setSelectionRange(
+          elements.messageInput
+            .value.length,
+
+          elements.messageInput
+            .value.length
+        );
+    },
+
+    280
+  );
 }
+
 
 /* -------------------------
    Story navigation highlighting
@@ -1221,20 +1785,25 @@ function setupStoryObserver() {
     "sources"
   ];
 
+
   const links = [
-    ...document.querySelectorAll(
-      ".story-nav-link"
-    )
+    ...document
+      .querySelectorAll(
+        ".story-nav-link"
+      )
   ];
+
 
   const observer =
     new IntersectionObserver(
       (entries) => {
+
         const visible =
           entries
             .filter(
               (entry) =>
-                entry.isIntersecting
+                entry
+                  .isIntersecting
             )
             .sort(
               (a, b) =>
@@ -1242,28 +1811,43 @@ function setupStoryObserver() {
                 a.intersectionRatio
             )[0];
 
+
         if (!visible) {
           return;
         }
 
-        links.forEach((link) => {
-          const target =
-            link
-              .getAttribute("href")
-              ?.slice(1);
 
-          link.classList.toggle(
-            "active",
-            target ===
-              visible.target.id
-          );
-        });
+        links.forEach(
+          (link) => {
+
+            const target =
+              link
+                .getAttribute(
+                  "href"
+                )
+                ?.slice(1);
+
+
+            link
+              .classList
+              .toggle(
+                "active",
+
+                target ===
+                  visible
+                    .target
+                    .id
+              );
+          }
+        );
       },
+
       {
         root:
-          document.getElementById(
-            "storyPane"
-          ),
+          document
+            .getElementById(
+              "storyPane"
+            ),
 
         threshold: [
           0.2,
@@ -1273,15 +1857,26 @@ function setupStoryObserver() {
       }
     );
 
-  sections.forEach((id) => {
-    const element =
-      document.getElementById(id);
 
-    if (element) {
-      observer.observe(element);
+  sections.forEach(
+    (id) => {
+
+      const element =
+        document
+          .getElementById(
+            id
+          );
+
+
+      if (element) {
+        observer.observe(
+          element
+        );
+      }
     }
-  });
+  );
 }
+
 
 /* -------------------------
    Events
@@ -1290,14 +1885,18 @@ function setupStoryObserver() {
 elements.nameForm
   .addEventListener(
     "submit",
+
     (event) => {
       event.preventDefault();
 
       applyUserName(
-        elements.nameInput.value
+        elements
+          .nameInput
+          .value
       );
     }
   );
+
 
 elements.changeNameButton
   .addEventListener(
@@ -1305,9 +1904,11 @@ elements.changeNameButton
     openNamePopup
   );
 
+
 elements.newChatButton
   .addEventListener(
     "click",
+
     () => {
       createChat();
 
@@ -1316,31 +1917,44 @@ elements.newChatButton
       );
 
       elements.appSidebar
-        .classList.remove("open");
+        .classList
+        .remove(
+          "open"
+        );
     }
   );
+
 
 elements.clearHistoryButton
   .addEventListener(
     "click",
+
     () => {
+
       const okay =
         window.confirm(
           "Clear all locally saved Kilaubot chat history from this browser?"
         );
 
+
       if (!okay) {
         return;
       }
 
-      state.chats = [];
+
+      state.chats =
+        [];
+
 
       state.activeChatId =
         null;
 
+
       saveChats();
 
+
       createChat();
+
 
       showToast(
         "Chat history cleared"
@@ -1348,18 +1962,22 @@ elements.clearHistoryButton
     }
   );
 
+
 elements.chatForm
   .addEventListener(
     "submit",
+
     (event) => {
       event.preventDefault();
 
       sendMessage(
-        elements.messageInput
+        elements
+          .messageInput
           .value
       );
     }
   );
+
 
 elements.messageInput
   .addEventListener(
@@ -1367,69 +1985,95 @@ elements.messageInput
     resizeComposer
   );
 
+
 elements.messageInput
   .addEventListener(
     "keydown",
+
     (event) => {
+
       if (
-        event.key === "Enter" &&
+        event.key ===
+          "Enter" &&
         !event.shiftKey
       ) {
         event.preventDefault();
 
         sendMessage(
-          elements.messageInput
+          elements
+            .messageInput
             .value
         );
       }
     }
   );
 
+
 document
   .querySelectorAll(
     "[data-question]"
   )
-  .forEach((button) => {
-    button.addEventListener(
-      "click",
-      () => {
-        prefillQuestion(
-          button.dataset.question
-        );
-      }
-    );
-  });
+  .forEach(
+    (button) => {
+
+      button.addEventListener(
+        "click",
+
+        () => {
+          prefillQuestion(
+            button
+              .dataset
+              .question
+          );
+        }
+      );
+    }
+  );
+
 
 elements.mobileMenuButton
   .addEventListener(
     "click",
+
     () => {
       elements.appSidebar
-        .classList.toggle("open");
+        .classList
+        .toggle(
+          "open"
+        );
     }
   );
+
 
 document
   .querySelectorAll(
     ".story-nav-link"
   )
-  .forEach((link) => {
-    link.addEventListener(
-      "click",
-      () => {
-        elements.appSidebar
-          .classList.remove(
-            "open"
-          );
-      }
-    );
-  });
+  .forEach(
+    (link) => {
+
+      link.addEventListener(
+        "click",
+
+        () => {
+          elements.appSidebar
+            .classList
+            .remove(
+              "open"
+            );
+        }
+      );
+    }
+  );
+
 
 /* Close menus when clicking outside */
 
 document.addEventListener(
   "click",
+
   (event) => {
+
     if (
       event.target.closest(
         ".history-options-menu"
@@ -1441,40 +2085,55 @@ document.addEventListener(
       return;
     }
 
+
     document
       .querySelectorAll(
         ".history-options-menu.show"
       )
-      .forEach((menu) => {
-        menu.classList.remove(
-          "show"
-        );
-      });
+      .forEach(
+        (menu) => {
+
+          menu.classList
+            .remove(
+              "show"
+            );
+        }
+      );
   }
 );
+
 
 /* Close menus using Escape */
 
 document.addEventListener(
   "keydown",
+
   (event) => {
+
     if (
-      event.key !== "Escape"
+      event.key !==
+      "Escape"
     ) {
       return;
     }
+
 
     document
       .querySelectorAll(
         ".history-options-menu.show"
       )
-      .forEach((menu) => {
-        menu.classList.remove(
-          "show"
-        );
-      });
+      .forEach(
+        (menu) => {
+
+          menu.classList
+            .remove(
+              "show"
+            );
+        }
+      );
   }
 );
+
 
 /* -------------------------
    Boot
@@ -1483,24 +2142,36 @@ document.addEventListener(
 function boot() {
   loadStoredData();
 
-  if (!state.activeChatId) {
+
+  if (
+    !state.activeChatId
+  ) {
     createChat();
-  } else {
+  }
+
+  else {
     renderHistory();
+
     renderMessages();
   }
+
 
   if (state.name) {
     applyUserName(
       state.name
     );
-  } else {
+  }
+
+  else {
     openNamePopup();
   }
 
+
   setupStoryObserver();
+
 
   resizeComposer();
 }
+
 
 boot();
