@@ -130,15 +130,7 @@ function loadStoredData() {
 }
 
 function saveChats() {
-  state.chats.sort((a, b) => {
-    const pinnedDifference = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
-
-    if (pinnedDifference !== 0) {
-      return pinnedDifference;
-    }
-
-    return b.updatedAt - a.updatedAt;
-  });
+  state.chats.sort((a, b) => b.updatedAt - a.updatedAt);
 
   localStorage.setItem(STORAGE.chats, JSON.stringify(state.chats));
 
@@ -188,7 +180,6 @@ function createChat() {
     id: createId("chat"),
     sessionId: createId("web"),
     title: "New conversation",
-    pinned: false,
     createdAt: now,
     updatedAt: now,
     messages: []
@@ -220,85 +211,6 @@ function switchChat(chatId) {
   renderMessages();
 
   elements.appSidebar.classList.remove("open");
-}
-function closeHistoryMenus() {
-  document
-    .querySelectorAll(".history-options-menu.show")
-    .forEach((menu) => menu.classList.remove("show"));
-}
-
-function togglePinChat(chatId) {
-  const chat = state.chats.find((chat) => chat.id === chatId);
-
-  if (!chat) return;
-
-  chat.pinned = !Boolean(chat.pinned);
-
-  saveChats();
-  renderHistory();
-
-  showToast(chat.pinned ? "Chat pinned" : "Chat unpinned");
-}
-
-function renameChat(chatId) {
-  const chat = state.chats.find((chat) => chat.id === chatId);
-
-  if (!chat) return;
-
-  const newTitle = window.prompt("Rename this chat:", chat.title);
-
-  if (newTitle === null) return;
-
-  const cleanTitle = String(newTitle)
-    .trim()
-    .replace(/\s+/g, " ")
-    .slice(0, 40);
-
-  if (!cleanTitle) {
-    showToast("Chat name cannot be empty");
-    return;
-  }
-
-  chat.title = cleanTitle;
-
-  saveChats();
-  renderHistory();
-
-  showToast("Chat renamed");
-}
-
-function deleteChat(chatId) {
-  const chat = state.chats.find((chat) => chat.id === chatId);
-
-  if (!chat) return;
-
-  const okay = window.confirm(`Delete "${chat.title}"?`);
-
-  if (!okay) return;
-
-  const deletingActiveChat = state.activeChatId === chatId;
-
-  state.chats = state.chats.filter((chat) => chat.id !== chatId);
-
-  if (deletingActiveChat) {
-    state.activeChatId = null;
-  }
-
-  saveChats();
-
-  if (!state.chats.length) {
-    createChat();
-  } else {
-    if (!state.activeChatId) {
-      state.activeChatId = state.chats[0].id;
-      saveChats();
-    }
-
-    renderHistory();
-    renderMessages();
-  }
-
-  showToast("Chat deleted");
 }
 
 function titleFromMessage(message) {
@@ -341,6 +253,7 @@ function addMessage(role, text) {
 /* -------------------------
    Render history
    ------------------------- */
+
 function renderHistory() {
   if (!state.chats.length) {
     elements.chatHistoryList.innerHTML = `
@@ -354,69 +267,20 @@ function renderHistory() {
   elements.chatHistoryList.innerHTML = state.chats
     .map((chat) => {
       const isActive = chat.id === state.activeChatId ? "active" : "";
-      const pinLabel = chat.pinned ? "Unpin" : "Pin";
-      const historyIcon = chat.pinned ? "📌" : "◌";
 
       return `
-        <div class="history-item-wrapper">
-          <button
-            class="history-item ${isActive}"
-            type="button"
-            data-chat-id="${escapeHtml(chat.id)}"
-            title="${escapeHtml(chat.title)}"
-          >
-            <span class="history-item-icon">${historyIcon}</span>
-
-            <span class="history-item-copy">
-              <strong>${escapeHtml(chat.title)}</strong>
-              <small>${escapeHtml(formatChatDate(chat.updatedAt))}</small>
-            </span>
-          </button>
-
-          <button
-            class="history-options-button"
-            type="button"
-            data-menu-button="${escapeHtml(chat.id)}"
-            aria-label="Options for ${escapeHtml(chat.title)}"
-            title="Chat options"
-          >
-            •••
-          </button>
-
-          <div
-            class="history-options-menu"
-            data-menu="${escapeHtml(chat.id)}"
-            role="menu"
-          >
-            <button
-              type="button"
-              data-action="pin"
-              data-action-chat-id="${escapeHtml(chat.id)}"
-              role="menuitem"
-            >
-              ${pinLabel}
-            </button>
-
-            <button
-              type="button"
-              data-action="rename"
-              data-action-chat-id="${escapeHtml(chat.id)}"
-              role="menuitem"
-            >
-              Rename
-            </button>
-
-            <button
-              type="button"
-              class="danger"
-              data-action="delete"
-              data-action-chat-id="${escapeHtml(chat.id)}"
-              role="menuitem"
-            >
-              Delete
-            </button>
-          </div>
-        </div>
+        <button
+          class="history-item ${isActive}"
+          type="button"
+          data-chat-id="${escapeHtml(chat.id)}"
+          title="${escapeHtml(chat.title)}"
+        >
+          <span class="history-item-icon">◌</span>
+          <span class="history-item-copy">
+            <strong>${escapeHtml(chat.title)}</strong>
+            <small>${escapeHtml(formatChatDate(chat.updatedAt))}</small>
+          </span>
+        </button>
       `;
     })
     .join("");
@@ -425,60 +289,7 @@ function renderHistory() {
     .querySelectorAll("[data-chat-id]")
     .forEach((button) => {
       button.addEventListener("click", () => {
-        closeHistoryMenus();
         switchChat(button.dataset.chatId);
-      });
-    });
-
-  elements.chatHistoryList
-    .querySelectorAll("[data-menu-button]")
-    .forEach((button) => {
-      button.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-
-        const chatId = button.dataset.menuButton;
-        const menu = elements.chatHistoryList.querySelector(
-          `[data-menu="${chatId}"]`
-        );
-
-        if (!menu) return;
-
-        const wasOpen = menu.classList.contains("show");
-
-        closeHistoryMenus();
-
-        if (!wasOpen) {
-          menu.classList.add("show");
-        }
-      });
-    });
-
-  elements.chatHistoryList
-    .querySelectorAll("[data-action]")
-    .forEach((button) => {
-      button.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-
-        const action = button.dataset.action;
-        const chatId = button.dataset.actionChatId;
-
-        closeHistoryMenus();
-
-        if (action === "pin") {
-          togglePinChat(chatId);
-          return;
-        }
-
-        if (action === "rename") {
-          renameChat(chatId);
-          return;
-        }
-
-        if (action === "delete") {
-          deleteChat(chatId);
-        }
       });
     });
 }
@@ -749,18 +560,6 @@ document.querySelectorAll(".story-nav-link").forEach((link) => {
   link.addEventListener("click", () => {
     elements.appSidebar.classList.remove("open");
   });
-});
-
-document.addEventListener("click", (event) => {
-  if (!event.target.closest(".history-item-wrapper")) {
-    closeHistoryMenus();
-  }
-});
-
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") {
-    closeHistoryMenus();
-  }
 });
 
 /* -------------------------
